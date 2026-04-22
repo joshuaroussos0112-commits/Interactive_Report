@@ -1,0 +1,3080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cybersecurity and Privacy Risk Assessment — Interactive Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..900,0..100&family=Public+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
+:root {
+  --paper: #F4EFE6;
+  --paper-warm: #EDE6D8;
+  --ink: #1A1F2E;
+  --ink-muted: #4A5264;
+  --ink-faint: #8B8578;
+  --rule: #D4CCC0;
+  --rule-soft: #E4DDD0;
+
+  --sev-extreme: #7A1E2B;
+  --sev-high: #B4592E;
+  --sev-moderate: #8B7A3D;
+  --sev-low: #5C6E5A;
+
+  --accent: #2D4A5C;
+  --accent-ink: #1E3340;
+  --highlight: #E8DCC1;
+  --highlight-strong: #D9C99F;
+
+  --shadow-soft: 0 1px 2px rgba(26,31,46,0.04), 0 4px 12px rgba(26,31,46,0.04);
+  --shadow-lift: 0 2px 4px rgba(26,31,46,0.06), 0 12px 28px rgba(26,31,46,0.08);
+
+  --display: 'Fraunces', 'Iowan Old Style', Georgia, serif;
+  --body: 'Public Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--body);
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image:
+    radial-gradient(ellipse at top left, rgba(184,145,74,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(45,74,92,0.03) 0%, transparent 50%);
+}
+
+/* Subtle paper grain */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  z-index: 1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E");
+  mix-blend-mode: multiply;
+}
+
+/* ============================================================
+   TYPOGRAPHY
+   ============================================================ */
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 400; color: var(--ink); letter-spacing: -0.01em; }
+h1 { font-size: clamp(2.5rem, 6vw, 4.5rem); line-height: 1.02; font-variation-settings: 'opsz' 144, 'SOFT' 0, 'wght' 400; }
+h2 { font-size: clamp(1.75rem, 3vw, 2.5rem); line-height: 1.1; margin-bottom: 0.5em; font-variation-settings: 'opsz' 96, 'SOFT' 20, 'wght' 450; }
+h3 { font-size: 1.3rem; line-height: 1.2; margin-bottom: 0.4em; font-variation-settings: 'opsz' 48, 'wght' 500; }
+h4 { font-size: 1rem; font-family: var(--body); font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; color: var(--ink-muted); }
+
+p { margin-bottom: 1em; }
+p + p { margin-top: -0.2em; }
+
+a { color: var(--accent); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color 0.2s; }
+a:hover { border-bottom-color: var(--accent); }
+
+.mono { font-family: var(--mono); font-size: 0.85em; }
+.eyebrow { font-family: var(--mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.15em; color: var(--ink-faint); font-weight: 500; }
+.small-caps { font-variant: small-caps; letter-spacing: 0.08em; }
+
+/* ============================================================
+   LAYOUT SHELL
+   ============================================================ */
+.shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  max-width: 1500px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+@media (max-width: 960px) {
+  .shell { grid-template-columns: 1fr; }
+}
+
+/* ============================================================
+   SIDE NAVIGATION
+   ============================================================ */
+.sidenav {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 3rem 2rem 2rem;
+  border-right: 1px solid var(--rule);
+  background: var(--paper-warm);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  overflow-y: auto;
+}
+
+@media (max-width: 960px) {
+  .sidenav {
+    position: relative;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+    padding: 1.5rem;
+  }
+}
+
+.sidenav-header {
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.sidenav-title {
+  font-family: var(--display);
+  font-size: 1.15rem;
+  line-height: 1.15;
+  font-variation-settings: 'opsz' 48, 'wght' 500;
+  margin-bottom: 0.35rem;
+}
+
+.sidenav-sub {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+}
+
+.sidenav-list { list-style: none; display: flex; flex-direction: column; gap: 0.15rem; }
+
+.nav-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.45rem 0;
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s;
+  line-height: 1.3;
+}
+
+.nav-item:hover { color: var(--ink); }
+
+.nav-item.active {
+  color: var(--accent-ink);
+  font-weight: 500;
+}
+
+.nav-num {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  font-weight: 500;
+  flex-shrink: 0;
+  width: 1.5rem;
+}
+
+.nav-time {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--ink-faint);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.nav-progress {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--rule);
+}
+
+.nav-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+
+.nav-progress-bar {
+  height: 2px;
+  background: var(--rule);
+  overflow: hidden;
+}
+
+.nav-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main {
+  padding: 4rem 5rem 6rem;
+  max-width: 950px;
+}
+
+@media (max-width: 1200px) { .main { padding: 3rem 3rem 5rem; } }
+@media (max-width: 700px) { .main { padding: 2rem 1.25rem 4rem; } }
+
+section {
+  margin-bottom: 5rem;
+  scroll-margin-top: 2rem;
+}
+
+.section-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+.section-num {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  color: var(--ink-faint);
+  letter-spacing: 0.1em;
+}
+
+.section-readtime {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-left: auto;
+}
+
+/* ============================================================
+   HERO
+   ============================================================ */
+.hero {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 3rem;
+  margin-bottom: 4rem;
+}
+
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+}
+
+.hero-eyebrow-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.hero h1 {
+  margin-bottom: 1.5rem;
+  max-width: 18ch;
+  font-variation-settings: 'opsz' 144, 'SOFT' 30, 'wght' 380;
+}
+
+.hero h1 em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'SOFT' 100, 'wght' 380;
+  color: var(--accent);
+}
+
+.hero-lede {
+  font-size: 1.25rem;
+  line-height: 1.5;
+  max-width: 58ch;
+  color: var(--ink-muted);
+  margin-bottom: 2.5rem;
+  font-weight: 300;
+}
+
+.hero-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 2rem 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.hero-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hero-meta-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+}
+
+.hero-meta-value {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-variation-settings: 'opsz' 24, 'wght' 500;
+}
+
+/* ============================================================
+   EXECUTIVE SUMMARY
+   ============================================================ */
+.exec-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  margin: 2rem 0;
+}
+
+@media (max-width: 700px) { .exec-grid { grid-template-columns: 1fr; } }
+
+.exec-cell {
+  padding: 1.5rem;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.exec-grid .exec-cell:nth-child(2n) { border-right: none; }
+.exec-grid .exec-cell:nth-last-child(-n+2) { border-bottom: none; }
+
+@media (max-width: 700px) {
+  .exec-cell { border-right: none; }
+  .exec-cell:last-child { border-bottom: none; }
+}
+
+.exec-stat {
+  font-family: var(--display);
+  font-size: 2.5rem;
+  line-height: 1;
+  font-variation-settings: 'opsz' 96, 'SOFT' 0, 'wght' 400;
+  margin-bottom: 0.5rem;
+  color: var(--accent);
+}
+
+.exec-stat-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+
+.exec-stat-note {
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.key-finding {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.25rem;
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.key-finding:last-child { border-bottom: none; }
+
+.key-finding-num {
+  font-family: var(--display);
+  font-size: 2rem;
+  line-height: 0.9;
+  font-variation-settings: 'opsz' 48, 'wght' 300;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.key-finding-text strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* ============================================================
+   ARCHITECTURE DIAGRAM
+   ============================================================ */
+.arch-wrap {
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  padding: 2rem 1.5rem;
+  margin: 1.5rem 0;
+  position: relative;
+}
+
+.arch-caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.arch-caption-title {
+  font-family: var(--display);
+  font-size: 1rem;
+  font-variation-settings: 'opsz' 24, 'wght' 500;
+}
+
+.arch-caption-hint {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.arch-svg { width: 100%; height: auto; display: block; }
+
+.arch-node rect {
+  fill: var(--paper);
+  stroke: var(--ink-muted);
+  stroke-width: 1;
+  transition: all 0.25s;
+}
+
+.arch-node text { font-family: var(--body); font-weight: 500; fill: var(--ink); }
+.arch-node .arch-role { font-family: var(--mono); font-weight: 400; font-size: 10px; fill: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; }
+
+.arch-boundary {
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.arch-boundary rect {
+  fill: none;
+  stroke: var(--sev-moderate);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  transition: all 0.25s;
+}
+
+.arch-boundary text {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  fill: var(--sev-moderate);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.arch-boundary:hover rect {
+  stroke: var(--sev-extreme);
+  stroke-width: 2;
+  stroke-dasharray: none;
+}
+
+.arch-boundary:hover text {
+  fill: var(--sev-extreme);
+  font-weight: 600;
+}
+
+.arch-boundary.active rect {
+  stroke: var(--sev-extreme);
+  stroke-width: 2.5;
+  stroke-dasharray: none;
+  fill: rgba(122, 30, 43, 0.04);
+}
+
+.arch-boundary.active text { fill: var(--sev-extreme); font-weight: 700; }
+
+.arch-flow {
+  stroke: var(--ink-muted);
+  stroke-width: 1.2;
+  fill: none;
+  marker-end: url(#arrowhead);
+}
+
+.arch-flow-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  fill: var(--ink-faint);
+  letter-spacing: 0.05em;
+}
+
+.boundary-detail {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+  background: var(--paper);
+  border-left: 3px solid var(--accent);
+  display: none;
+}
+
+.boundary-detail.visible { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.boundary-detail-title {
+  font-family: var(--display);
+  font-size: 1.1rem;
+  font-variation-settings: 'opsz' 24, 'wght' 500;
+  margin-bottom: 0.5rem;
+}
+
+.boundary-detail-risks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.risk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.risk-chip:hover {
+  background: var(--highlight);
+  border-color: var(--accent);
+}
+
+.risk-chip .chip-id { font-weight: 600; color: var(--accent); }
+
+/* ============================================================
+   THREAT CLASSES
+   ============================================================ */
+.threat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 0;
+  border: 1px solid var(--rule);
+  margin: 1.5rem 0;
+}
+
+.threat-card {
+  padding: 1.5rem;
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.threat-card:last-child { border-right: none; }
+
+.threat-card-id {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--sev-extreme);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.4rem;
+}
+
+.threat-card-title {
+  font-family: var(--display);
+  font-size: 1.05rem;
+  font-variation-settings: 'opsz' 24, 'wght' 500;
+  margin-bottom: 0.75rem;
+  line-height: 1.2;
+}
+
+.threat-card p {
+  font-size: 0.88rem;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ============================================================
+   RISK REGISTER
+   ============================================================ */
+.register-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+}
+
+.filter-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+
+.filter-chips { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+
+.filter-chip {
+  padding: 0.3rem 0.7rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  color: var(--ink-muted);
+  transition: all 0.2s;
+}
+
+.filter-chip:hover { border-color: var(--accent); color: var(--ink); }
+
+.filter-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--paper);
+}
+
+.register-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.register-row {
+  border-bottom: 1px solid var(--rule);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.register-row:hover { background: var(--highlight); }
+
+.register-row.active { background: var(--highlight); }
+
+.register-row td {
+  padding: 0.85rem 0.6rem;
+  vertical-align: top;
+}
+
+.register-row td:first-child { padding-left: 0.25rem; }
+
+.reg-id {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.reg-theme {
+  font-weight: 500;
+  max-width: 42ch;
+  line-height: 1.35;
+}
+
+.reg-score {
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.reg-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid;
+}
+
+.reg-badge.extreme { color: var(--sev-extreme); border-color: var(--sev-extreme); background: rgba(122,30,43,0.04); }
+.reg-badge.high { color: var(--sev-high); border-color: var(--sev-high); background: rgba(180,89,46,0.05); }
+.reg-badge.moderate { color: var(--sev-moderate); border-color: var(--sev-moderate); background: rgba(139,122,61,0.05); }
+.reg-badge.low { color: var(--sev-low); border-color: var(--sev-low); background: rgba(92,110,90,0.05); }
+
+.reg-expand {
+  display: none;
+}
+
+.reg-expand.open { display: table-row; }
+
+.reg-expand td {
+  padding: 0 0 0 0;
+  background: var(--paper-warm);
+}
+
+.reg-expand-inner {
+  padding: 1.5rem 1.5rem 2rem;
+  border-left: 3px solid var(--accent);
+  animation: fadeIn 0.3s ease;
+}
+
+.reg-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem 2rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 700px) { .reg-field-grid { grid-template-columns: 1fr; gap: 1rem; } }
+
+.reg-field-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  margin-bottom: 0.35rem;
+}
+
+.reg-field-value { font-size: 0.88rem; line-height: 1.5; color: var(--ink); }
+
+.reg-sublist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.reg-sublist li {
+  padding: 0.2rem 0;
+  font-size: 0.85rem;
+}
+
+.reg-sublist li::before { content: '— '; color: var(--ink-faint); }
+
+.reg-scores-block {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.85rem 1rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  margin: 0.75rem 0;
+}
+
+.reg-score-cell { flex: 1; }
+
+.reg-score-cell .reg-field-label { margin-bottom: 0.25rem; }
+
+.reg-score-big {
+  font-family: var(--display);
+  font-size: 1.6rem;
+  line-height: 1;
+  font-variation-settings: 'opsz' 48, 'wght' 500;
+}
+
+/* ============================================================
+   HEAT-MAP
+   ============================================================ */
+.heatmap-wrap {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.75rem;
+  margin: 2rem 0;
+}
+
+.heatmap-yaxis {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: space-around;
+  align-items: flex-end;
+  padding-bottom: 2rem;
+  padding-right: 0.5rem;
+}
+
+.heatmap-axis-label {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-align: right;
+  line-height: 1.1;
+}
+
+.heatmap-xaxis-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  aspect-ratio: 1;
+  border: 1px solid var(--ink);
+  gap: 0;
+  position: relative;
+}
+
+.heatmap-cell {
+  border-right: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.4rem;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  min-height: 0;
+}
+
+.heatmap-cell:nth-child(5n) { border-right: none; }
+.heatmap-cell:nth-last-child(-n+5) { border-bottom: none; }
+
+.heatmap-cell[data-band="low"] { background: rgba(92,110,90,0.08); }
+.heatmap-cell[data-band="moderate"] { background: rgba(139,122,61,0.1); }
+.heatmap-cell[data-band="high"] { background: rgba(180,89,46,0.12); }
+.heatmap-cell[data-band="extreme"] { background: rgba(122,30,43,0.14); }
+
+.heatmap-cell:hover { outline: 2px solid var(--accent); z-index: 2; }
+
+.heatmap-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 1.5px solid var(--ink);
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 1px;
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+
+.heatmap-dot:hover { transform: scale(1.2); z-index: 3; }
+
+.heatmap-dot.inherent { background: transparent; border-style: dashed; color: var(--ink-muted); }
+
+.heatmap-xaxis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding-top: 0.25rem;
+}
+
+.heatmap-xaxis span {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.heatmap-title {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+  padding-right: 0.5rem;
+  align-self: center;
+}
+
+.heatmap-xtitle {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+  text-align: center;
+  margin-top: 0.5rem;
+}
+
+.heatmap-legend {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule);
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.heatmap-legend-item { display: flex; align-items: center; gap: 0.5rem; }
+
+.legend-swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+}
+
+.legend-swatch.inherent { background: transparent; border-style: dashed; border-color: var(--ink-muted); }
+.legend-swatch.residual { background: var(--paper); }
+
+/* ============================================================
+   GAP ASSESSMENT
+   ============================================================ */
+.gap-domain {
+  border: 1px solid var(--rule);
+  margin-bottom: 0.75rem;
+  background: var(--paper);
+}
+
+.gap-domain-header {
+  padding: 1.1rem 1.25rem;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 1rem;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.gap-domain-header:hover { background: var(--highlight); }
+
+.gap-domain.open .gap-domain-header { background: var(--paper-warm); border-bottom: 1px solid var(--rule); }
+
+.gap-domain-clause {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.gap-domain-title {
+  font-family: var(--display);
+  font-size: 1rem;
+  font-variation-settings: 'opsz' 24, 'wght' 500;
+}
+
+.gap-domain-status {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid;
+}
+
+.gap-domain-status.open { color: var(--sev-high); border-color: var(--sev-high); }
+.gap-domain-status.partly { color: var(--sev-moderate); border-color: var(--sev-moderate); }
+.gap-domain-status.closed { color: var(--sev-low); border-color: var(--sev-low); }
+
+.gap-domain-toggle {
+  font-family: var(--mono);
+  font-size: 1rem;
+  color: var(--ink-faint);
+  transition: transform 0.2s;
+}
+
+.gap-domain.open .gap-domain-toggle { transform: rotate(45deg); }
+
+.gap-domain-body {
+  display: none;
+  padding: 1.25rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.gap-domain.open .gap-domain-body { display: block; animation: fadeIn 0.3s ease; }
+
+.gap-domain-body p { margin-bottom: 0.75em; }
+
+.gap-linked {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.gap-linked-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-right: 0.5rem;
+  align-self: center;
+}
+
+/* ============================================================
+   FUTURE STATE ROADMAP
+   ============================================================ */
+.wave {
+  border-left: 2px solid var(--rule);
+  padding-left: 2rem;
+  padding-bottom: 1.5rem;
+  margin-left: 1rem;
+  position: relative;
+}
+
+.wave::before {
+  content: '';
+  position: absolute;
+  left: -7px;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  background: var(--paper);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+}
+
+.wave.wave-1::before { background: var(--sev-extreme); border-color: var(--sev-extreme); }
+.wave.wave-2::before { background: var(--sev-high); border-color: var(--sev-high); }
+.wave.wave-3::before { background: var(--sev-moderate); border-color: var(--sev-moderate); }
+
+.wave-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.wave-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--ink-faint);
+}
+
+.wave-date {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.wave h3 {
+  font-family: var(--display);
+  font-size: 1.2rem;
+  font-variation-settings: 'opsz' 24, 'wght' 500;
+  margin-bottom: 0.75rem;
+}
+
+.wave p {
+  color: var(--ink-muted);
+  max-width: 65ch;
+  margin-bottom: 1rem;
+}
+
+.recommendation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.recommendation-list li {
+  padding: 0.6rem 0.9rem;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-left: 3px solid var(--accent);
+  font-size: 0.9rem;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.rec-priority {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+}
+
+.rec-risks {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-faint);
+}
+
+/* ============================================================
+   REFLECTION / PULL QUOTES
+   ============================================================ */
+.pullquote {
+  font-family: var(--display);
+  font-size: 1.7rem;
+  line-height: 1.25;
+  font-style: italic;
+  font-variation-settings: 'opsz' 72, 'SOFT' 60, 'wght' 380;
+  color: var(--accent);
+  max-width: 24ch;
+  margin: 2.5rem 0 2.5rem -1.5rem;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--highlight-strong);
+}
+
+@media (max-width: 700px) { .pullquote { margin-left: 0; font-size: 1.35rem; } }
+
+.reflection-body p {
+  max-width: 62ch;
+  font-size: 1rem;
+  line-height: 1.65;
+}
+
+.reflection-body p:first-of-type::first-letter {
+  font-family: var(--display);
+  font-size: 3.5rem;
+  line-height: 0.85;
+  float: left;
+  padding: 0.35rem 0.7rem 0 0;
+  font-variation-settings: 'opsz' 144, 'SOFT' 40, 'wght' 400;
+  color: var(--accent);
+}
+
+/* ============================================================
+   CRITIQUE / METHOD
+   ============================================================ */
+.layers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 700px) { .layers { grid-template-columns: 1fr; } }
+
+.layer-card {
+  padding: 1.5rem;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--accent);
+}
+
+.layer-card h4 {
+  margin-bottom: 0.75rem;
+  color: var(--accent-ink);
+}
+
+.layer-card p {
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ============================================================
+   MISC / UTILITIES
+   ============================================================ */
+.lede {
+  font-size: 1.1rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
+  max-width: 62ch;
+  margin-bottom: 1.5rem;
+  font-weight: 300;
+}
+
+.body-text {
+  max-width: 62ch;
+  line-height: 1.65;
+}
+
+.body-text p { margin-bottom: 1em; }
+
+.callout {
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  background: var(--paper-warm);
+  border-left: 3px solid var(--accent);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.callout-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+footer {
+  margin-top: 6rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Smooth focus outlines */
+button, .nav-item, .filter-chip, .risk-chip, .gap-domain-header, .heatmap-dot {
+  outline: none;
+}
+
+button:focus-visible, .nav-item:focus-visible, .filter-chip:focus-visible,
+.risk-chip:focus-visible, .gap-domain-header:focus-visible, .heatmap-dot:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* ============================================================
+   TREATMENT SIMULATOR
+   ============================================================ */
+.sim-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+@media (max-width: 900px) { .sim-wrap { grid-template-columns: 1fr; } }
+
+.sim-controls, .sim-impact {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.sim-wave {
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.sim-wave-header {
+  padding: 0.7rem 1rem;
+  background: var(--paper-warm);
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sim-wave-label {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.sim-wave-toggle {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  padding: 0.2rem 0.55rem;
+  background: transparent;
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transition: all 0.15s;
+}
+
+.sim-wave-toggle:hover {
+  background: var(--accent);
+  color: var(--paper);
+  border-color: var(--accent);
+}
+
+.sim-treatment {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.7rem 1rem;
+  border-top: 1px solid var(--rule-soft);
+  cursor: pointer;
+  align-items: flex-start;
+  transition: background 0.15s;
+}
+
+.sim-wave .sim-treatment:first-of-type { border-top: none; }
+
+.sim-treatment:hover { background: var(--highlight); }
+
+.sim-treatment input[type="checkbox"] {
+  margin-top: 0.25rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+}
+
+.sim-t-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.35;
+  color: var(--ink);
+}
+
+.sim-t-risks {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.25rem;
+}
+
+.sim-treatment.checked {
+  background: rgba(45,74,92,0.06);
+}
+
+.sim-treatment.checked .sim-t-risks {
+  color: var(--accent);
+}
+
+.sim-quick-actions {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  padding-top: 0.25rem;
+}
+
+.sim-action {
+  padding: 0.4rem 0.8rem;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  cursor: pointer;
+  color: var(--ink-muted);
+  transition: all 0.15s;
+}
+
+.sim-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--paper-warm);
+}
+
+.sim-panel {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+
+.sim-panel h4 {
+  font-size: 0.7rem;
+  font-family: var(--mono);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+  margin-bottom: 0.85rem;
+}
+
+.sim-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sim-bar-row {
+  display: grid;
+  grid-template-columns: 68px 1fr 24px;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sim-bar-label {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sim-bar {
+  height: 10px;
+  background: var(--paper-warm);
+  border: 1px solid var(--rule-soft);
+  overflow: hidden;
+}
+
+.sim-bar-fill {
+  height: 100%;
+  width: 0%;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sim-bar-count {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: right;
+  color: var(--ink);
+}
+
+.sim-chips {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+
+.sim-chip {
+  padding: 0.3rem 0.6rem;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  border: 1px solid var(--sev-extreme);
+  color: var(--sev-extreme);
+  background: rgba(122,30,43,0.05);
+  transition: all 0.35s ease;
+  letter-spacing: 0.02em;
+}
+
+.sim-chip.mitigated {
+  border-color: var(--sev-low);
+  color: var(--sev-low);
+  background: rgba(92,110,90,0.06);
+  text-decoration: line-through;
+  text-decoration-color: rgba(92,110,90,0.5);
+  text-decoration-thickness: 1px;
+}
+
+.sim-narrative {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--ink-muted);
+}
+
+.sim-narrative strong { color: var(--ink); font-weight: 600; }
+
+.sim-panel-summary {
+  border-left: 3px solid var(--accent);
+}
+
+.sim-heatmap-wrap {
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.sim-heatmap {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  aspect-ratio: 1;
+  border: 1px solid var(--ink);
+  gap: 0;
+}
+
+.sim-heatmap .heatmap-cell {
+  padding: 0.2rem;
+  cursor: default;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.sim-heatmap .heatmap-cell:hover { outline: none; }
+
+.sim-heatmap .heatmap-dot {
+  width: 17px;
+  height: 17px;
+  font-size: 0.58rem;
+  cursor: default;
+  margin: 0;
+}
+
+.sim-heatmap .heatmap-dot:hover { transform: none; }
+
+.sim-heatmap-xaxis {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  padding-top: 0.3rem;
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--ink-faint);
+  text-align: center;
+  letter-spacing: 0.05em;
+}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ============================================================
+     SIDE NAVIGATION
+     ============================================================ -->
+<aside class="sidenav">
+  <div class="sidenav-header">
+    <div class="sidenav-title">Cloud Healthcare Analytics — Risk Assessment</div>
+    <div class="sidenav-sub">Assessment 2A · Joshua Roussos · Apr 2026</div>
+  </div>
+  <ul class="sidenav-list" id="navList">
+    <li class="nav-item" data-target="summary"><span class="nav-num">01</span><span>Executive Summary</span><span class="nav-time">3 min</span></li>
+    <li class="nav-item" data-target="architecture"><span class="nav-num">02</span><span>Architecture</span><span class="nav-time">4 min</span></li>
+    <li class="nav-item" data-target="threats"><span class="nav-num">03</span><span>Threat Model</span><span class="nav-time">3 min</span></li>
+    <li class="nav-item" data-target="register"><span class="nav-num">04</span><span>Risk Register</span><span class="nav-time">8 min</span></li>
+    <li class="nav-item" data-target="heatmap"><span class="nav-num">05</span><span>Heat-Map</span><span class="nav-time">2 min</span></li>
+    <li class="nav-item" data-target="gaps"><span class="nav-num">06</span><span>ISO 27001 Gaps</span><span class="nav-time">4 min</span></li>
+    <li class="nav-item" data-target="future"><span class="nav-num">07</span><span>Future State</span><span class="nav-time">3 min</span></li>
+    <li class="nav-item" data-target="simulator"><span class="nav-num">08</span><span>Treatment Simulator</span><span class="nav-time">3 min</span></li>
+    <li class="nav-item" data-target="critique"><span class="nav-num">09</span><span>Method Critique</span><span class="nav-time">2 min</span></li>
+  </ul>
+  <div class="nav-progress">
+    <div class="nav-progress-label"><span>Progress</span><span id="progPct">0%</span></div>
+    <div class="nav-progress-bar"><div class="nav-progress-fill" id="progFill"></div></div>
+  </div>
+</aside>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main class="main">
+
+<!-- HERO / COVER -->
+<section class="hero" id="top">
+  <div class="hero-eyebrow">
+    <span>Assessment 2A · Week 6 Submission</span>
+    <span class="hero-eyebrow-rule"></span>
+    <span>32 min review</span>
+  </div>
+  <h1>Where <em>ordinary workflows</em> become the dominant security risk.</h1>
+  <p class="hero-lede">
+    A cybersecurity and privacy risk assessment of a cloud-based healthcare analytics environment spanning SurveyToGo, SNAP&nbsp;11, Azure SQL, GetThematic, Power BI, and a governed reporting portal. The dominant residual risks in this environment are not dramatic external attacks — they are ordinary workflow failures at trust boundaries between systems.
+  </p>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Author</span>
+      <span class="hero-meta-value">Joshua Roussos</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Framework</span>
+      <span class="hero-meta-value">ISO 27001:2022 / ISMS</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Scope</span>
+      <span class="hero-meta-value">6 systems · 13 risks</span>
+    </div>
+    <div class="hero-meta-item">
+      <span class="hero-meta-label">Date</span>
+      <span class="hero-meta-value">April 2026</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     01 · EXECUTIVE SUMMARY
+     ============================================================ -->
+<section id="summary">
+  <div class="section-meta">
+    <span class="section-num">§ 01</span>
+    <h2 style="margin-bottom: 0;">Executive summary</h2>
+    <span class="section-readtime">3 min</span>
+  </div>
+
+  <p class="lede">
+    This environment reflects a mature control posture, but the highest residual risk is concentrated where legitimate workflows move or broaden access to sensitive healthcare data — not at the perimeter of any single cloud platform.
+  </p>
+
+  <div class="exec-grid">
+    <div class="exec-cell">
+      <div class="exec-stat-label">Risks identified</div>
+      <div class="exec-stat">13</div>
+      <div class="exec-stat-note">Across 5 threat classes, 6 trust boundaries.</div>
+    </div>
+    <div class="exec-cell">
+      <div class="exec-stat-label">High residual</div>
+      <div class="exec-stat">8</div>
+      <div class="exec-stat-note">Concentrated at export, audience mapping, and qualitative pathways.</div>
+    </div>
+    <div class="exec-cell">
+      <div class="exec-stat-label">NDB-engaging</div>
+      <div class="exec-stat">3</div>
+      <div class="exec-stat-note">R3, R4, R7 each independently engage obligations under Part IIIC of the Privacy Act&nbsp;1988.</div>
+    </div>
+    <div class="exec-cell">
+      <div class="exec-stat-label">Amplifier risks</div>
+      <div class="exec-stat">2</div>
+      <div class="exec-stat-note">R12 and R13 worsen all other classes during a live incident.</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top: 2.5rem; margin-bottom: 1rem;">Key findings</h3>
+
+  <div class="key-finding">
+    <div class="key-finding-num">i</div>
+    <div class="key-finding-text">
+      <strong>The dominant threat is workflow failure, not platform compromise.</strong> Stale access after role change, row-level-security errors at release, stale PDF recipient lists, wrong-identifiability uploads to GetThematic, and over-scoped integration identities produce more plausible harm than external attack on Azure or Microsoft cloud controls.
+    </div>
+  </div>
+  <div class="key-finding">
+    <div class="key-finding-num">ii</div>
+    <div class="key-finding-text">
+      <strong>Two trust boundaries concentrate the residual exposure.</strong> Azure&nbsp;SQL&nbsp;→&nbsp;GetThematic (identifiability decisions, manual transfer methods) and the reporting/export surface (where governance weakens after data leaves the portal) account for the majority of High and Extreme ratings.
+    </div>
+  </div>
+  <div class="key-finding">
+    <div class="key-finding-num">iii</div>
+    <div class="key-finding-text">
+      <strong>Free text is a structurally distinct risk class.</strong> Contextual identifiers persist in qualitative responses even where structured fields are pseudonymised, which is why R7 engages the NDB scheme independent of any structured-data failure.
+    </div>
+  </div>
+  <div class="key-finding">
+    <div class="key-finding-num">iv</div>
+    <div class="key-finding-text">
+      <strong>The future-state design is deliberately targeted, not comprehensive.</strong> Three more ambitious directions — architectural decomposition of the integration path, programmatic redaction of free text, and deeper warehouse tenant segregation — were considered and explicitly set aside as belonging to a separate architectural conversation.
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     02 · ARCHITECTURE
+     ============================================================ -->
+<section id="architecture">
+  <div class="section-meta">
+    <span class="section-num">§ 02</span>
+    <h2 style="margin-bottom: 0;">Current-state architecture</h2>
+    <span class="section-readtime">4 min</span>
+  </div>
+
+  <p class="lede">
+    An Australia-hosted SaaS and Azure ecosystem that collects, stores, transforms, analyses, and reports healthcare survey, audit, and qualitative feedback data. Boundaries&nbsp;3 and&nbsp;5 are the most sensitive transition points and account for the majority of High and Extreme residual ratings.
+  </p>
+
+  <div class="arch-wrap">
+    <div class="arch-caption">
+      <span class="arch-caption-title">Figure 1 · System flow and trust boundaries</span>
+      <span class="arch-caption-hint">Hover a boundary to reveal linked risks</span>
+    </div>
+
+    <svg class="arch-svg" viewBox="0 0 900 460" xmlns="http://www.w3.org/2000/svg" aria-label="Architecture diagram">
+      <defs>
+        <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+          <path d="M0,0 L8,4 L0,8 z" fill="#4A5264"/>
+        </marker>
+      </defs>
+
+      <!-- Source systems -->
+      <g class="arch-node">
+        <rect x="40" y="40" width="160" height="70" rx="2"/>
+        <text x="120" y="68" text-anchor="middle" font-size="13">SurveyToGo</text>
+        <text class="arch-role" x="120" y="88" text-anchor="middle">Survey SaaS</text>
+      </g>
+      <g class="arch-node">
+        <rect x="240" y="40" width="160" height="70" rx="2"/>
+        <text x="320" y="68" text-anchor="middle" font-size="13">SNAP 11</text>
+        <text class="arch-role" x="320" y="88" text-anchor="middle">Audit SaaS</text>
+      </g>
+
+      <!-- Azure SQL -->
+      <g class="arch-node">
+        <rect x="130" y="175" width="270" height="80" rx="2" fill="#EDE6D8"/>
+        <text x="265" y="205" text-anchor="middle" font-size="14" font-weight="600">Azure SQL</text>
+        <text class="arch-role" x="265" y="225" text-anchor="middle">Client DBs · Warehouses</text>
+        <text class="arch-role" x="265" y="242" text-anchor="middle" style="font-size: 9px;">Controlled storage · Transform</text>
+      </g>
+
+      <!-- GetThematic -->
+      <g class="arch-node">
+        <rect x="500" y="175" width="180" height="80" rx="2"/>
+        <text x="590" y="205" text-anchor="middle" font-size="13">GetThematic</text>
+        <text class="arch-role" x="590" y="225" text-anchor="middle">Qualitative SaaS</text>
+        <text class="arch-role" x="590" y="242" text-anchor="middle" style="font-size: 9px;">Text analytics · Themes</text>
+      </g>
+
+      <!-- Power BI -->
+      <g class="arch-node">
+        <rect x="260" y="320" width="200" height="70" rx="2"/>
+        <text x="360" y="348" text-anchor="middle" font-size="13">Power BI</text>
+        <text class="arch-role" x="360" y="368" text-anchor="middle">Reporting &amp; dashboards</text>
+      </g>
+
+      <!-- Portal -->
+      <g class="arch-node">
+        <rect x="520" y="320" width="200" height="70" rx="2"/>
+        <text x="620" y="348" text-anchor="middle" font-size="13">Portal · PDF · Exports</text>
+        <text class="arch-role" x="620" y="368" text-anchor="middle">End-user consumption</text>
+      </g>
+
+      <!-- Identity plane -->
+      <g class="arch-node">
+        <rect x="750" y="120" width="120" height="230" rx="2" fill="#F4EFE6" stroke-dasharray="3 3"/>
+        <text x="810" y="145" text-anchor="middle" font-size="11" font-weight="600">Identity &amp;</text>
+        <text x="810" y="160" text-anchor="middle" font-size="11" font-weight="600">Admin Plane</text>
+        <text class="arch-role" x="810" y="185" text-anchor="middle" style="font-size: 9px;">SSO · MFA</text>
+        <text class="arch-role" x="810" y="200" text-anchor="middle" style="font-size: 9px;">Service accts</text>
+        <text class="arch-role" x="810" y="215" text-anchor="middle" style="font-size: 9px;">API keys</text>
+        <text class="arch-role" x="810" y="230" text-anchor="middle" style="font-size: 9px;">Vendor access</text>
+      </g>
+
+      <!-- Flows -->
+      <path class="arch-flow" d="M120,110 L120,140 Q120,160 200,175"/>
+      <text class="arch-flow-label" x="125" y="140">API</text>
+      <path class="arch-flow" d="M320,110 L320,175"/>
+      <text class="arch-flow-label" x="325" y="140">API</text>
+      <path class="arch-flow" d="M400,215 L500,215"/>
+      <text class="arch-flow-label" x="420" y="208">API · export · manual</text>
+      <path class="arch-flow" d="M265,255 L265,310 L330,320"/>
+      <text class="arch-flow-label" x="200" y="290">Direct SQL</text>
+      <path class="arch-flow" d="M560,255 L560,300 L430,320"/>
+      <text class="arch-flow-label" x="555" y="285">API</text>
+      <path class="arch-flow" d="M460,355 L520,355"/>
+      <text class="arch-flow-label" x="465" y="348">Embed · export</text>
+
+      <!-- Trust boundaries -->
+      <g class="arch-boundary" data-boundary="B1">
+        <rect x="20" y="25" width="390" height="105" rx="3"/>
+        <text x="30" y="42">B1 · Source → Azure ingestion</text>
+      </g>
+      <g class="arch-boundary" data-boundary="B2">
+        <rect x="115" y="165" width="300" height="100" rx="3"/>
+        <text x="125" y="180">B2 · Client DB → Warehouse</text>
+      </g>
+      <g class="arch-boundary" data-boundary="B3">
+        <rect x="485" y="165" width="210" height="100" rx="3"/>
+        <text x="495" y="180">B3 · Azure SQL → GetThematic</text>
+      </g>
+      <g class="arch-boundary" data-boundary="B4">
+        <rect x="245" y="310" width="230" height="90" rx="3"/>
+        <text x="255" y="325">B4 · Data → Power BI</text>
+      </g>
+      <g class="arch-boundary" data-boundary="B5">
+        <rect x="505" y="310" width="230" height="90" rx="3"/>
+        <text x="515" y="325">B5 · Reporting → End users</text>
+      </g>
+      <g class="arch-boundary" data-boundary="B6">
+        <rect x="740" y="110" width="140" height="250" rx="3"/>
+        <text x="750" y="125">B6 · Identity / Privileged</text>
+      </g>
+    </svg>
+
+    <div class="boundary-detail" id="boundaryDetail">
+      <div class="boundary-detail-title" id="bdTitle"></div>
+      <div id="bdBody"></div>
+      <div class="boundary-detail-risks" id="bdRisks"></div>
+    </div>
+  </div>
+
+  <div class="body-text" style="margin-top: 2rem;">
+    <p>Six named components sit within the assessment scope. <strong>SurveyToGo</strong> and <strong>SNAP&nbsp;11</strong> are upstream SaaS source systems, feeding <strong>Azure&nbsp;SQL</strong> through API. Client-level databases are maintained before consolidation into the reporting warehouse. Qualitative text flows from Azure&nbsp;SQL into <strong>GetThematic</strong> via API, export, or manual upload depending on client configuration — a single boundary with three different strength levels. <strong>Power&nbsp;BI</strong> connects directly to Azure&nbsp;SQL and, for some clients, to GetThematic. End users consume reporting through a governed password-protected <strong>portal</strong> with row-level security.</p>
+    <p>A seventh cross-cutting plane — identity, vendor support, and privileged administration — spans all components and is treated as Boundary&nbsp;6 in the threat model.</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     03 · THREAT MODEL
+     ============================================================ -->
+<section id="threats">
+  <div class="section-meta">
+    <span class="section-num">§ 03</span>
+    <h2 style="margin-bottom: 0;">Threat model</h2>
+    <span class="section-readtime">3 min</span>
+  </div>
+
+  <p class="lede">
+    The threat picture is shaped less by direct compromise of a cloud platform and more by the interaction between privileged access, exportable reporting outputs, client-managed recipient lifecycle, free-text sensitivity, integration identities, and inconsistent control strength across multiple transfer paths. Five threat classes organise the register.
+  </p>
+
+  <div class="threat-grid">
+    <div class="threat-card">
+      <div class="threat-card-id">TC1</div>
+      <div class="threat-card-title">Authorised-user overreach</div>
+      <p>Legitimate access becomes harmful when permissions remain broader than operational need after role or project change. The system works as built; the permission model has drifted since last review.</p>
+    </div>
+    <div class="threat-card">
+      <div class="threat-card-id">TC2</div>
+      <div class="threat-card-title">Configuration failure</div>
+      <p>Normal release or modelling activity introduces disclosure through incorrect row-level security, audience mapping, or segregation logic. No malicious action required — routine development without regression testing.</p>
+    </div>
+    <div class="threat-card">
+      <div class="threat-card-id">TC3</div>
+      <div class="threat-card-title">Integration identity misuse</div>
+      <p>An API key, service account, or machine credential is compromised or overused. Blast radius is high because one identity can traverse Azure&nbsp;SQL, GetThematic, and Power&nbsp;BI in a single call chain.</p>
+    </div>
+    <div class="threat-card">
+      <div class="threat-card-id">TC4</div>
+      <div class="threat-card-title">Qualitative privacy leakage</div>
+      <p>Free text or metadata re-identifies people through contextual detail. Free-text responses contain role names, locations, and incident descriptions that persist even where structured fields are pseudonymised.</p>
+    </div>
+    <div class="threat-card">
+      <div class="threat-card-id">TC5</div>
+      <div class="threat-card-title">Workflow escape</div>
+      <p>Governed data leaves the governed environment through export, forwarding, copying, or stale automated distribution. The initial event can be alerted, but downstream handling is outside direct control.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-label">Amplifier logic</div>
+    Two register entries — R12 (informal incident ownership) and R13 (inconsistent log-review evidence) — are treated as amplifiers rather than primary disclosure pathways. Their effect is on containment speed and detectability across every other threat class during a live incident.
+  </div>
+</section>
+
+<!-- ============================================================
+     04 · RISK REGISTER
+     ============================================================ -->
+<section id="register">
+  <div class="section-meta">
+    <span class="section-num">§ 04</span>
+    <h2 style="margin-bottom: 0;">Risk register</h2>
+    <span class="section-readtime">8 min</span>
+  </div>
+
+  <p class="lede">
+    Thirteen register entries, scored against a 5&nbsp;×&nbsp;5 likelihood-impact method (Appendix&nbsp;A). Click any row to expand full detail — threat mechanism, existing controls, remaining gap, rating rationale, ownership, and treatment state.
+  </p>
+
+  <div class="register-controls">
+    <span class="filter-label">Filter by threat class</span>
+    <div class="filter-chips" id="filterChips">
+      <button class="filter-chip active" data-filter="all">All (13)</button>
+      <button class="filter-chip" data-filter="TC1">TC1 — Overreach</button>
+      <button class="filter-chip" data-filter="TC2">TC2 — Config</button>
+      <button class="filter-chip" data-filter="TC3">TC3 — Integration</button>
+      <button class="filter-chip" data-filter="TC4">TC4 — Qualitative</button>
+      <button class="filter-chip" data-filter="TC5">TC5 — Escape</button>
+    </div>
+  </div>
+
+  <table class="register-table" id="registerTable">
+    <thead>
+      <tr style="border-bottom: 1.5px solid var(--ink); font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint);">
+        <th style="text-align: left; padding: 0.5rem 0.25rem; width: 50px;">ID</th>
+        <th style="text-align: left; padding: 0.5rem 0.6rem;">Risk theme</th>
+        <th style="text-align: center; padding: 0.5rem 0.6rem; width: 80px;">Inherent</th>
+        <th style="text-align: center; padding: 0.5rem 0.6rem; width: 80px;">Residual</th>
+        <th style="text-align: left; padding: 0.5rem 0.6rem; width: 120px;">Status</th>
+      </tr>
+    </thead>
+    <tbody id="registerBody"><!-- populated by JS --></tbody>
+  </table>
+
+  <div class="callout" style="margin-top: 2rem;">
+    <div class="callout-label">Why residual scores cluster at High</div>
+    The concentration at High is a structural feature, not a failure to differentiate. This environment handles health-related and qualitative data across multiple trust boundaries, and material harm can arise through legitimate workflows — export, stale recipients, manual upload, configuration error, cross-platform access drift — even where baseline governance is mature. Spreading scores artificially for presentation value would manufacture variation the evidence does not support.
+  </div>
+</section>
+
+<!-- ============================================================
+     05 · HEAT-MAP
+     ============================================================ -->
+<section id="heatmap">
+  <div class="section-meta">
+    <span class="section-num">§ 05</span>
+    <h2 style="margin-bottom: 0;">Likelihood × impact heat-map</h2>
+    <span class="section-readtime">2 min</span>
+  </div>
+
+  <p class="lede">
+    Each risk is plotted at both inherent (dashed) and residual (solid) positions. The vector between them shows where controls are doing work. Click any risk to jump to its register entry.
+  </p>
+
+  <div class="heatmap-wrap">
+    <div class="heatmap-title">Impact →</div>
+    <div class="heatmap-xaxis-wrap">
+      <div class="heatmap-grid" id="heatmapGrid"><!-- cells populated by JS --></div>
+      <div class="heatmap-xaxis">
+        <span>Rare</span><span>Unlikely</span><span>Possible</span><span>Likely</span><span>Almost&nbsp;certain</span>
+      </div>
+      <div class="heatmap-xtitle">Likelihood →</div>
+    </div>
+  </div>
+
+  <div class="heatmap-legend">
+    <div class="heatmap-legend-item">
+      <span class="legend-swatch inherent"></span>
+      <span>Inherent (before controls)</span>
+    </div>
+    <div class="heatmap-legend-item">
+      <span class="legend-swatch residual"></span>
+      <span>Residual (after controls)</span>
+    </div>
+    <div class="heatmap-legend-item" style="margin-left: auto;">
+      <span style="font-family: var(--mono); font-size: 0.72rem; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.1em;">Bands: Low 1–4 · Moderate 5–9 · High 10–16 · Extreme 17–25</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     06 · GAP ASSESSMENT
+     ============================================================ -->
+<section id="gaps">
+  <div class="section-meta">
+    <span class="section-num">§ 06</span>
+    <h2 style="margin-bottom: 0;">ISO 27001 / ISMS gap assessment</h2>
+    <span class="section-readtime">4 min</span>
+  </div>
+
+  <p class="lede">
+    ISO 27001:2022 Annex&nbsp;A provides the control vocabulary; the remaining gaps are concentrated at operational transition points rather than within any single platform. Click a domain to expand the current position and linked risks.
+  </p>
+
+  <div id="gapDomains">
+    <div class="gap-domain">
+      <div class="gap-domain-header">
+        <span class="gap-domain-clause">A.5.15 – A.5.18 · A.8.2 – A.8.3</span>
+        <span class="gap-domain-title">Access control &amp; dual-surface governance</span>
+        <span class="gap-domain-status open">Open</span>
+        <span class="gap-domain-toggle">+</span>
+      </div>
+      <div class="gap-domain-body">
+        <p>Baseline controls are strong — SSO, MFA, governed portal access, RLS, centrally managed provisioning, formal JML processes. The weakness is not absence of control but privilege drift and configuration dependence across the separate Power&nbsp;BI and GetThematic role models.</p>
+        <p>A.5.18 compliance depends on cross-platform reconciliation that is not yet formalised for mover events. A mover ticket correctly processed in one platform can leave residual access in the other.</p>
+        <div class="gap-linked">
+          <span class="gap-linked-label">Linked risks</span>
+          <span class="risk-chip" data-risk="R1"><span class="chip-id">R1</span></span>
+          <span class="risk-chip" data-risk="R9"><span class="chip-id">R9</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-domain">
+      <div class="gap-domain-header">
+        <span class="gap-domain-clause">A.5.12 – A.5.14 · A.8.12</span>
+        <span class="gap-domain-title">Information classification &amp; transfer</span>
+        <span class="gap-domain-status open">Open</span>
+        <span class="gap-domain-toggle">+</span>
+      </div>
+      <div class="gap-domain-body">
+        <p>The four-tier classification model, project-specific identifiability rules, siloed re-identification keys, restricted raw free-text access, and client-specific minimisation rules are strong governance features. The main weakness is that classification cannot be treated as static — it must be re-applied at every transfer and output point.</p>
+        <p>A.8.12 data-leakage controls are partly implemented but not yet consistently evidenced at every export path, and exports are often classified differently from source data.</p>
+        <div class="gap-linked">
+          <span class="gap-linked-label">Linked risks</span>
+          <span class="risk-chip" data-risk="R3"><span class="chip-id">R3</span></span>
+          <span class="risk-chip" data-risk="R5"><span class="chip-id">R5</span></span>
+          <span class="risk-chip" data-risk="R7"><span class="chip-id">R7</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-domain">
+      <div class="gap-domain-header">
+        <span class="gap-domain-clause">A.5.19 – A.5.23</span>
+        <span class="gap-domain-title">Supplier &amp; third-party governance</span>
+        <span class="gap-domain-status closed">Closed · monitor</span>
+        <span class="gap-domain-toggle">+</span>
+      </div>
+      <div class="gap-domain-body">
+        <p>Supplier assurance is comparatively mature through executed contracts, DPAs, privacy clauses, security schedules, and formal vendor-access approval processes. GetThematic remains a sensitive supplier boundary because qualitative text and metadata cross into third-party SaaS.</p>
+        <p>The specific A.5.23 evidence gap has now been closed — the current independent assurance artefact has been formally reviewed by the CTO and recorded in the supplier review pack. Ongoing monitoring under A.5.22 remains necessary.</p>
+        <div class="gap-linked">
+          <span class="gap-linked-label">Linked risks</span>
+          <span class="risk-chip" data-risk="R11"><span class="chip-id">R11</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-domain">
+      <div class="gap-domain-header">
+        <span class="gap-domain-clause">A.8.15 · A.8.16</span>
+        <span class="gap-domain-title">Logging, monitoring &amp; event review</span>
+        <span class="gap-domain-status partly">Partly implemented</span>
+        <span class="gap-domain-toggle">+</span>
+      </div>
+      <div class="gap-domain-body">
+        <p>Daily review, alerting, central handling of noteworthy events, and a defined retention schedule give this domain a strong baseline. The remaining gap is no longer the absence of rules but the need to apply them consistently across all platforms and retain evidence that log review, alert handling, and exception review have actually occurred — the heart of A.8.16 assurance.</p>
+        <div class="gap-linked">
+          <span class="gap-linked-label">Linked risks</span>
+          <span class="risk-chip" data-risk="R13"><span class="chip-id">R13</span></span>
+          <span class="risk-chip" data-risk="R3"><span class="chip-id">R3</span></span>
+          <span class="risk-chip" data-risk="R6"><span class="chip-id">R6</span></span>
+          <span class="risk-chip" data-risk="R7"><span class="chip-id">R7</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-domain">
+      <div class="gap-domain-header">
+        <span class="gap-domain-clause">A.5.24 – A.5.28</span>
+        <span class="gap-domain-title">Incident management</span>
+        <span class="gap-domain-status open">Open</span>
+        <span class="gap-domain-toggle">+</span>
+      </div>
+      <div class="gap-domain-body">
+        <p>Runbooks for revoked access, wrong-file uploads, export leaks, and credential compromise support incident readiness. The remaining weakness is that control ownership is understood informally and can shift with business structure; in a time-critical incident, that flexibility can blur who has final authority over Power&nbsp;BI exposure, GetThematic disclosure, or wrong-recipient events.</p>
+        <div class="gap-linked">
+          <span class="gap-linked-label">Linked risks</span>
+          <span class="risk-chip" data-risk="R12"><span class="chip-id">R12</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-domain">
+      <div class="gap-domain-header">
+        <span class="gap-domain-clause">A.5.34 · A.8.12</span>
+        <span class="gap-domain-title">Healthcare-data &amp; privacy handling</span>
+        <span class="gap-domain-status open">Open</span>
+        <span class="gap-domain-toggle">+</span>
+      </div>
+      <div class="gap-domain-body">
+        <p>Healthcare-data risk remains concentrated in free-text disclosure, export beyond the governed environment, and inconsistent control strength where transfers become manual or client-dependent. Compliance depends on minimisation, approval checks, restrictions around raw text, and client-governed retention exceptions being applied consistently across the Azure SQL → GetThematic → Power&nbsp;BI pathway.</p>
+        <p><strong>Australian regulatory overlay:</strong> Privacy Act 1988 (APP&nbsp;11, APP&nbsp;6) and the Notifiable Data Breaches scheme operate alongside Annex&nbsp;A and impose independent obligations. R3, R4, and R7 engage the NDB serious-harm threshold under s&nbsp;26WK.</p>
+        <div class="gap-linked">
+          <span class="gap-linked-label">Linked risks</span>
+          <span class="risk-chip" data-risk="R3"><span class="chip-id">R3</span></span>
+          <span class="risk-chip" data-risk="R4"><span class="chip-id">R4</span></span>
+          <span class="risk-chip" data-risk="R5"><span class="chip-id">R5</span></span>
+          <span class="risk-chip" data-risk="R7"><span class="chip-id">R7</span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-domain">
+      <div class="gap-domain-header">
+        <span class="gap-domain-clause">A.5.17 · A.8.24 · A.8.32</span>
+        <span class="gap-domain-title">Change management &amp; secrets</span>
+        <span class="gap-domain-status open">Open</span>
+        <span class="gap-domain-toggle">+</span>
+      </div>
+      <div class="gap-domain-body">
+        <p>Privileged change controls are mature through peer review, change approval, admin logging, and an emergency-change register. Secrets management shows a defined register, rotation process, and CTO oversight. The residual gap is that a small number of privileged roles still hold high-consequence power across multiple systems, and permission regression testing is not yet consistently required as a first-class release control after every material reporting change.</p>
+        <div class="gap-linked">
+          <span class="gap-linked-label">Linked risks</span>
+          <span class="risk-chip" data-risk="R2"><span class="chip-id">R2</span></span>
+          <span class="risk-chip" data-risk="R6"><span class="chip-id">R6</span></span>
+          <span class="risk-chip" data-risk="R10"><span class="chip-id">R10</span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     07 · FUTURE STATE
+     ============================================================ -->
+<section id="future">
+  <div class="section-meta">
+    <span class="section-num">§ 07</span>
+    <h2 style="margin-bottom: 0;">Future-state design</h2>
+    <span class="section-readtime">3 min</span>
+  </div>
+
+  <p class="lede">
+    Deliberately targeted rather than comprehensive. Three waves, sequenced so detection and ownership controls are strengthened against an already-tightened control baseline rather than in parallel.
+  </p>
+
+  <div class="wave wave-1">
+    <div class="wave-meta">
+      <span class="wave-label">Wave 1 · Top priority</span>
+      <span class="wave-date">26 Apr 2026</span>
+    </div>
+    <h3>Outward-facing disclosure pathways</h3>
+    <p>The most direct exposure routes to unintended recipients and the clearest engagement with NDB obligations. High value, low structural change, and they unblock assurance evidence for the amplifier controls downstream.</p>
+    <ul class="recommendation-list">
+      <li><span class="rec-priority">1a</span><span>Export governance — weekly alert review, justified high-sensitivity exports, tightened role matrix</span><span class="rec-risks">R3 · R13</span></li>
+      <li><span class="rec-priority">1b</span><span>Quarterly recipient recertification and distribution-list hygiene</span><span class="rec-risks">R4</span></li>
+      <li><span class="rec-priority">1c</span><span>Cross-platform access reconciliation and mover control (Power BI ↔ GetThematic)</span><span class="rec-risks">R1 · R9</span></li>
+      <li><span class="rec-priority">1d</span><span>Permission regression testing as a formal release gate for audience-affecting changes</span><span class="rec-risks">R2 · R10</span></li>
+    </ul>
+  </div>
+
+  <div class="wave wave-2">
+    <div class="wave-meta">
+      <span class="wave-label">Wave 2 · Structural</span>
+      <span class="wave-date">12 May 2026</span>
+    </div>
+    <h3>Integration identity &amp; qualitative-data handling</h3>
+    <p>Higher coordination cost but attacks the root of the most consequential misuse pathways. Scope reduction of machine identities, identifiability sign-off on qualitative transfers, and raw-text access narrowing.</p>
+    <ul class="recommendation-list">
+      <li><span class="rec-priority">2a</span><span>Upload validation checklist with identifiability sign-off before every qualitative transfer</span><span class="rec-risks">R5</span></li>
+      <li><span class="rec-priority">2b</span><span>Raw-text access reduction and output-masking decision record</span><span class="rec-risks">R7</span></li>
+      <li><span class="rec-priority">2c</span><span>API / service identity scope review plus anomaly thresholds</span><span class="rec-risks">R6</span></li>
+    </ul>
+  </div>
+
+  <div class="wave wave-3">
+    <div class="wave-meta">
+      <span class="wave-label">Wave 3 · Amplifier controls</span>
+      <span class="wave-date">11 Jun 2026</span>
+    </div>
+    <h3>Detection, ownership &amp; supplier review</h3>
+    <p>Amplifier controls deliver most value once primary disclosure paths are tightened. Strengthens containment speed, detectability, and evidentiary quality of incident response.</p>
+    <ul class="recommendation-list">
+      <li><span class="rec-priority">3a</span><span>Documented incident ownership matrix with tabletop exercise evidence</span><span class="rec-risks">R12</span></li>
+      <li><span class="rec-priority">3b</span><span>Platform-wide log-review evidence and recall testing</span><span class="rec-risks">R13</span></li>
+      <li><span class="rec-priority">3c</span><span>Supplier assurance renewal cadence and review retention</span><span class="rec-risks">R11</span></li>
+    </ul>
+  </div>
+
+  <div class="callout" style="margin-top: 3rem;">
+    <div class="callout-label">Explicitly excluded</div>
+    <strong>Architectural decomposition of the integration path</strong> (would reduce R6 blast radius below the High band — requires technical discovery beyond the evidence base). <strong>Programmatic redaction of free text</strong> (lossy for qualitative analysis — belongs upstream of the treatment plan). <strong>Deeper warehouse tenant segregation</strong> (would strengthen R8 — sits outside the risk-treatment horizon). Each is legitimate; each belongs to a separate architectural conversation.
+  </div>
+</section>
+
+<!-- ============================================================
+     08 · TREATMENT PLAN SIMULATOR
+     ============================================================ -->
+<section id="simulator">
+  <div class="section-meta">
+    <span class="section-num">§ 08</span>
+    <h2 style="margin-bottom: 0;">Treatment plan simulator</h2>
+    <span class="section-readtime">3 min · interactive</span>
+  </div>
+
+  <p class="lede">
+    A live model of the treatment roadmap. Toggle any combination of the ten treatments in Section&nbsp;07 and the residual-risk surface responds immediately — band distribution, NDB exposure, amplifier status, and a compact heat-map. The simulator answers questions the static roadmap cannot: what does deferring Wave&nbsp;3 actually cost? Which risks remain unreachable by any treatment in this plan?
+  </p>
+
+  <div class="sim-wrap">
+
+    <div class="sim-controls">
+      <div class="sim-wave">
+        <div class="sim-wave-header">
+          <span class="sim-wave-label">Wave 1 · outward-facing disclosure · 26 Apr 2026</span>
+          <button class="sim-wave-toggle" data-wave-toggle="1">Toggle all</button>
+        </div>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="1a">
+          <div>
+            <div class="sim-t-title">1a · Export governance &amp; role matrix review</div>
+            <div class="sim-t-risks">Affects R3</div>
+          </div>
+        </label>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="1b">
+          <div>
+            <div class="sim-t-title">1b · Quarterly recipient recertification &amp; distribution hygiene</div>
+            <div class="sim-t-risks">Affects R4</div>
+          </div>
+        </label>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="1c">
+          <div>
+            <div class="sim-t-title">1c · Cross-platform access reconciliation &amp; mover control</div>
+            <div class="sim-t-risks">Affects R1 · R9</div>
+          </div>
+        </label>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="1d">
+          <div>
+            <div class="sim-t-title">1d · Permission regression testing as release gate</div>
+            <div class="sim-t-risks">Affects R2 · R10</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="sim-wave">
+        <div class="sim-wave-header">
+          <span class="sim-wave-label">Wave 2 · integration identity &amp; qualitative data · 12 May 2026</span>
+          <button class="sim-wave-toggle" data-wave-toggle="2">Toggle all</button>
+        </div>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="2a">
+          <div>
+            <div class="sim-t-title">2a · Upload validation &amp; identifiability sign-off</div>
+            <div class="sim-t-risks">Affects R5</div>
+          </div>
+        </label>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="2b">
+          <div>
+            <div class="sim-t-title">2b · Raw-text access reduction &amp; output masking</div>
+            <div class="sim-t-risks">Affects R7</div>
+          </div>
+        </label>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="2c">
+          <div>
+            <div class="sim-t-title">2c · API / service identity scope review</div>
+            <div class="sim-t-risks">Affects R6</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="sim-wave">
+        <div class="sim-wave-header">
+          <span class="sim-wave-label">Wave 3 · detection &amp; ownership · 11 Jun 2026</span>
+          <button class="sim-wave-toggle" data-wave-toggle="3">Toggle all</button>
+        </div>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="3a">
+          <div>
+            <div class="sim-t-title">3a · Documented incident ownership &amp; tabletop</div>
+            <div class="sim-t-risks">Affects R12 · amplifier</div>
+          </div>
+        </label>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="3b">
+          <div>
+            <div class="sim-t-title">3b · Log-review evidence &amp; recall testing</div>
+            <div class="sim-t-risks">Affects R13 · amplifier</div>
+          </div>
+        </label>
+        <label class="sim-treatment">
+          <input type="checkbox" data-tid="3c">
+          <div>
+            <div class="sim-t-title">3c · Supplier assurance renewal &amp; review cadence</div>
+            <div class="sim-t-risks">Affects R11</div>
+          </div>
+        </label>
+      </div>
+
+      <div class="sim-quick-actions">
+        <button class="sim-action" data-preset="none">Reset</button>
+        <button class="sim-action" data-preset="wave1">Wave 1 only</button>
+        <button class="sim-action" data-preset="wave12">Waves 1 + 2</button>
+        <button class="sim-action" data-preset="all">All waves</button>
+      </div>
+    </div>
+
+    <div class="sim-impact">
+
+      <div class="sim-panel">
+        <h4>Residual band distribution · 13 risks</h4>
+        <div class="sim-bars">
+          <div class="sim-bar-row">
+            <span class="sim-bar-label">Extreme</span>
+            <div class="sim-bar"><div class="sim-bar-fill" id="barExtreme" style="background: var(--sev-extreme);"></div></div>
+            <span class="sim-bar-count" id="cntExtreme">0</span>
+          </div>
+          <div class="sim-bar-row">
+            <span class="sim-bar-label">High</span>
+            <div class="sim-bar"><div class="sim-bar-fill" id="barHigh" style="background: var(--sev-high);"></div></div>
+            <span class="sim-bar-count" id="cntHigh">0</span>
+          </div>
+          <div class="sim-bar-row">
+            <span class="sim-bar-label">Moderate</span>
+            <div class="sim-bar"><div class="sim-bar-fill" id="barModerate" style="background: var(--sev-moderate);"></div></div>
+            <span class="sim-bar-count" id="cntModerate">0</span>
+          </div>
+          <div class="sim-bar-row">
+            <span class="sim-bar-label">Low</span>
+            <div class="sim-bar"><div class="sim-bar-fill" id="barLow" style="background: var(--sev-low);"></div></div>
+            <span class="sim-bar-count" id="cntLow">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-panel">
+        <h4>Regulatory / NDB engagement</h4>
+        <div class="sim-chips">
+          <span class="sim-chip ndb" data-risk="R3">R3 · Export disclosure</span>
+          <span class="sim-chip ndb" data-risk="R4">R4 · Stale recipients</span>
+          <span class="sim-chip ndb" data-risk="R7">R7 · Qualitative leakage</span>
+        </div>
+        <div class="sim-narrative" id="ndbNarrative"></div>
+      </div>
+
+      <div class="sim-panel">
+        <h4>Amplifier controls · R12 &amp; R13</h4>
+        <div class="sim-chips">
+          <span class="sim-chip amp" data-risk="R12">R12 · Incident ownership</span>
+          <span class="sim-chip amp" data-risk="R13">R13 · Log-review evidence</span>
+        </div>
+        <div class="sim-narrative" id="amplifierNarrative"></div>
+      </div>
+
+      <div class="sim-panel">
+        <h4>Simulated residual heat-map</h4>
+        <div class="sim-heatmap-wrap">
+          <div class="sim-heatmap" id="simHeatmap"></div>
+          <div class="sim-heatmap-xaxis">
+            <span>L1</span><span>L2</span><span>L3</span><span>L4</span><span>L5</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sim-panel sim-panel-summary">
+        <h4>Interpretation</h4>
+        <div class="sim-narrative" id="simSummary"></div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <div class="callout" style="margin-top: 2rem;">
+    <div class="callout-label">What this model is not</div>
+    The simulator takes each treatment's target residual from the register at face value and assumes independent effect on its mapped risks. It does not model partial implementation, control-quality variance, or second-order interactions. Its purpose is to surface the <em>shape</em> of the treatment plan — what it addresses, what it leaves untouched, and where the floors are — not to produce a point estimate of residual risk. R8 (cross-client visibility after warehouse merging) receives no treatment in this plan and remains fixed at its current residual.
+  </div>
+</section>
+
+<!-- ============================================================
+     09 · METHOD CRITIQUE
+     ============================================================ -->
+<section id="critique">
+  <div class="section-meta">
+    <span class="section-num">§ 09</span>
+    <h2 style="margin-bottom: 0;">Methodological critique</h2>
+    <span class="section-readtime">2 min</span>
+  </div>
+
+  <p class="lede">
+    ISO 27001 / Annex&nbsp;A is valuable as a control vocabulary but obscures engineering depth when compliance citation is treated as technical sufficiency. The stronger assessment uses Annex&nbsp;A as organising structure while testing each clause against the architecture's actual failure modes.
+  </p>
+
+  <h3 style="margin-top: 2rem;">Worked example — A.5.18 (access rights)</h3>
+  <p class="body-text" style="margin-top: 0.75rem;">The same three-layer logic — <em>citation · technical test · evidence</em> — can be applied to every Annex&nbsp;A domain in this report. It is what distinguishes a compliance-mapped assessment from an engineering-grounded one.</p>
+
+  <div class="layers">
+    <div class="layer-card">
+      <h4>01 · Citation</h4>
+      <p>A.5.18 requires that access rights be provisioned, reviewed, modified, and removed per policy. The environment has a JML process, governed approvals, and periodic access reviews. The clause can be cited with confidence.</p>
+    </div>
+    <div class="layer-card">
+      <h4>02 · Technical test</h4>
+      <p>The clause does not speak to the specific failure mode here: Power&nbsp;BI and GetThematic maintain separate role models. A mover event correctly processed in one platform can leave residual access in the other. The engineering question is whether the JML workflow requires a dual-platform check.</p>
+    </div>
+    <div class="layer-card">
+      <h4>03 · Evidence</h4>
+      <p>Defensibility rests on artefacts the clause does not specify: a JML ticket showing both platforms were updated, a cross-platform reconciliation record, and a sign-off confirming the dual check was performed. R1 and R9 remain open because the gap is beneath the clause, not within it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Reflection and Limitations sections removed — these were pure prose
+     duplicating the PDF (§7 Reflection, §8 Limitations). The HTML is now
+     scoped to content that adds genuine interactive value beyond the PDF:
+     hover-activated architecture boundaries, filterable register, clickable
+     heat-map, clause-level ISO accordion, and the treatment simulator. -->
+
+<footer>
+  <span>Joshua Roussos · Assessment 2A · April 2026</span>
+  <span>ISO 27001:2022 / ISMS-informed</span>
+</footer>
+
+</main>
+</div>
+
+<script>
+/* ============================================================
+   RISK DATA
+   ============================================================ */
+const risks = [
+  { id: 'R1', theme: 'Excessive or stale Power BI / GetThematic access exposes data beyond role need',
+    systems: 'Power BI, GetThematic, reporting portal, client-facing datasets',
+    mechanism: 'A user retains broader access than operationally required after a role, client, or project change. Because Power BI and GetThematic maintain separate role models, a mover event correctly processed in one platform may not be reflected in the other.',
+    controls: 'SSO, MFA, JML process, governed approvals, central add/remove, periodic access reviews',
+    gap: 'Cross-platform reconciliation is not yet strong enough to eliminate drift between Power BI and GetThematic. Mover-event controls do not yet explicitly require a dual-platform check before completion.',
+    inherent: 16, inherentL: 4, inherentI: 4, inherentBand: 'high',
+    residual: 12, residualL: 3, residualI: 4, residualBand: 'high',
+    rationale: 'Misuse is more plausible than external compromise in a mature governed environment. One stale role can span multiple datasets and persist across review cycles if cross-platform checks are absent.',
+    threatClass: 'TC1', owner: 'CTO · Head of Analytics',
+    treatment: 'Formal cross-platform access recertification and explicit accountable ownership for dual-surface access reviews.',
+    status: 'Partly implemented', next: '12 May 2026', target: '8 (Moderate)' },
+  { id: 'R2', theme: 'A Power BI RLS, dataset-permission, or portal-mapping error exposes one client\'s reporting',
+    systems: 'Power BI datasets, workspaces, portal roles, client dashboards',
+    mechanism: 'Misconfigured RLS rule, workspace role, dataset permission, or portal-audience mapping exposes the wrong client or user group. Can occur during routine development and release without any malicious action.',
+    controls: 'RLS, role-based access, change approval, functional testing and sign-off, peer review',
+    gap: 'Permissions are not yet explicitly retested as a first-class control objective after every material reporting change. Functional sign-off confirms that data looks correct; it does not confirm that audience boundaries remain intact.',
+    inherent: 20, inherentL: 4, inherentI: 5, inherentBand: 'extreme',
+    residual: 12, residualL: 3, residualI: 4, residualBand: 'high',
+    rationale: 'Environment depends heavily on correct permission design. A single configuration error can create immediate disclosure without defeating authentication. Impact rated 5 because the failure can expose an entire client\'s reporting dataset.',
+    threatClass: 'TC2', owner: 'Head of Analytics · Reporting admin',
+    treatment: 'Mandatory post-change permission regression testing and dual sign-off for all audience-affecting changes, implemented as a defined release-control step.',
+    status: 'Partly implemented', next: '12 May 2026', target: '8 (Moderate)' },
+  { id: 'R3', theme: 'Sensitive reports are exported, emailed, downloaded, or onward-shared outside the governed environment',
+    systems: 'Power BI outputs, portal reports, PDF / Excel / CSV exports',
+    mechanism: 'A legitimate user downloads or forwards data beyond the intended business need, moving it outside the controlled reporting environment. Onward sharing by client-side recipients is outside direct CFS control once the initial export event has occurred.',
+    controls: 'Role-based export controls, portal logging, recipient checks, anomaly alerting, A.8.12 DLP (partial)',
+    gap: 'Once a client receives an authorised export, downstream handling is only partly controllable. Export is a deliberate business feature, so the exposure opportunity is routine rather than exceptional.',
+    inherent: 20, inherentL: 5, inherentI: 4, inherentBand: 'extreme',
+    residual: 16, residualL: 4, residualI: 4, residualBand: 'high',
+    rationale: 'Likelihood 5 because authorised export events occur routinely. Impact 4 because forwarded exports can harm clients without being immediately detectable. Under the NDB scheme (s 26WK, Privacy Act 1988), an authorised export reaching an unintended recipient and involving health information likely to cause serious harm would constitute an eligible data breach requiring OAIC notification within 30 days.',
+    threatClass: 'TC1 · TC5', owner: 'Head of Analytics · Customer Services',
+    treatment: 'Role-based export permission review against current role matrix; weekly A.8.16 alert review; high-sensitivity export justification. R13 log-review evidence treated as a dependency.',
+    status: 'Ongoing — on track', next: '26 Apr 2026', target: '12 (High) — remains High because export is intentional; further reduction requires client-side contractual controls' },
+  { id: 'R4', theme: 'Automated PDF reports continue to stale or unauthorised recipients',
+    systems: 'Automated report distribution, client recipient lists, email-delivered PDFs',
+    mechanism: 'Reports continue to be sent to client-nominated recipients who have changed role, left the client organisation, or no longer require access. Recipient validity depends partly on client-side lifecycle discipline rather than purely on governed login access.',
+    controls: 'Controlled generation, portal logging, review process, revocation capability, bounce handling',
+    gap: 'Recipient validity still depends partly on client lifecycle discipline. A recipient change not communicated will result in continued distribution until the next review cycle or a bounce is detected.',
+    inherent: 20, inherentL: 5, inherentI: 4, inherentBand: 'extreme',
+    residual: 16, residualL: 4, residualI: 4, residualBand: 'high',
+    rationale: 'Can occur without any technical attack and is recurring wherever distribution relies on external upkeep of recipient lists. Continued distribution of health-related reporting to a stale recipient may constitute an eligible data breach under the NDB scheme.',
+    threatClass: 'TC5', owner: 'Customer Services · Head of Analytics',
+    treatment: 'Quarterly recipient recertification, expiry dating for distribution lists, exception-review process for bounced / changed / undeliverable recipients.',
+    status: 'Partly implemented — on track', next: '26 Apr 2026', target: '9 (Moderate)' },
+  { id: 'R5', theme: 'The wrong file, or the wrong identifiability level of file, is uploaded from Azure SQL to GetThematic',
+    systems: 'Azure SQL exports, GetThematic workspaces, qualitative-data processing inputs',
+    mechanism: 'Manual upload or export/import sends the wrong file, wrong project file, or a file containing more identifying information than intended. Can occur through operator error, absent pre-transfer validation, or a classification decision that does not reflect actual file content.',
+    controls: 'Check-and-approve process, project-specific review, restricted access, runbooks, identifiability sign-off',
+    gap: 'No universal blanket validation rule covers every project, so control strength varies across client-specific transfer methods. Manual handling is less standardised than API transfer and creates a credible human-error pathway.',
+    inherent: 16, inherentL: 4, inherentI: 4, inherentBand: 'high',
+    residual: 12, residualL: 3, residualI: 4, residualBand: 'high',
+    rationale: 'Likelihood moderated by the approval process but not eliminated because manual handling varies by project. Impact 4 because a wrong-file upload can expose identifiable data to qualitative analysts who should not have access.',
+    threatClass: 'TC4', owner: 'Head of Analytics · Qualitative admin',
+    treatment: 'Mandatory upload validation checklist with explicit identifiability sign-off before every transfer; clearer classification decision record; progressive reduction of manual paths.',
+    status: 'Partly implemented', next: '12 May 2026', target: '8 (Moderate)' },
+  { id: 'R6', theme: 'An over-scoped API key, service account, or integration identity is misused across systems',
+    systems: 'API integrations, service identities, Azure SQL, GetThematic, Power BI connectors',
+    mechanism: 'A compromised or misused machine credential accesses, moves, or retrieves data beyond the intended integration workflow. A single integration identity can bridge Azure SQL, GetThematic, and Power BI in a single call chain.',
+    controls: 'Secrets register, rotation process, approvals, integration logging, anomaly review, CTO oversight',
+    gap: 'Blast radius remains high if secret scope is broader than necessary or if anomalous integration behaviour is not caught quickly. Secret rotation does not by itself reduce scope; it only limits the duration of a compromised credential\'s usefulness.',
+    inherent: 20, inherentL: 4, inherentI: 5, inherentBand: 'extreme',
+    residual: 15, residualL: 3, residualI: 5, residualBand: 'high',
+    rationale: 'Likelihood moderated by governance; consequence 5 because one machine identity can traverse multiple sensitive systems and data tiers in a single call chain.',
+    threatClass: 'TC3', owner: 'CTO · Technical owner',
+    treatment: 'CTO scope review of all API keys / service accounts; documented minimum scope per workflow; over-scoped keys revoked or reissued; strengthened anomaly monitoring under A.8.16. R13 is a detectability dependency.',
+    status: 'Ongoing', next: '12 May 2026', target: '10 — floor of High; below this requires architectural decomposition of integration paths' },
+  { id: 'R7', theme: 'Raw free text or metadata reveals unexpected identifiers or sensitive contextual detail',
+    systems: 'GetThematic inputs and outputs, Power BI qualitative views, raw comments, metadata fields',
+    mechanism: 'A user with valid access sees identifiers, contextual clues, or patient/staff references in free text beyond what their role needs. Unlike structured fields, free-text responses can contain role names, location references, incident descriptions, and other re-identification clues that persist even where structured fields have been pseudonymised.',
+    controls: 'Restricted access, project-based access decisions, siloed re-identification keys, raw-text approval process',
+    gap: 'The environment still relies more on role restriction than universal sanitisation, and free text is inherently difficult to standardise or programmatically scrub without loss of analytical value.',
+    inherent: 20, inherentL: 4, inherentI: 5, inherentBand: 'extreme',
+    residual: 15, residualL: 3, residualI: 5, residualBand: 'high',
+    rationale: 'Free text can undermine otherwise strong structured-data controls. Impact 5 because health-related qualitative disclosures can cause serious harm and carry regulatory consequences under A.5.34. Free-text re-identification is explicitly within scope of the NDB scheme under s 26WK.',
+    threatClass: 'TC1 · TC4', owner: 'Head of Analytics · CTO (escalation)',
+    treatment: 'Role review of raw-text visibility; output masking feasibility assessment for Power BI qualitative views. Requires query-level monitoring (A.8.16) to be detectable — R13 dependency.',
+    status: 'Ongoing', next: '12 May 2026', target: '10 (High) — qualitative free text is structurally difficult to sanitise completely without compromising analytical value' },
+  { id: 'R8', theme: 'Cross-client visibility emerges after warehouse merging or downstream modelling',
+    systems: 'Azure SQL warehouses, consolidated reporting datasets, downstream Power BI models',
+    mechanism: 'Merged warehouse structures or downstream analytical models weaken segregation and allow unintended cross-client or cross-project visibility. Segregation that exists at the source-database level may not carry through automatically to consolidated marts.',
+    controls: 'Separate client databases pre-merge, database activity logging, governed reporting, RLS on Power BI datasets',
+    gap: 'Segregation must still hold after consolidation, not just before it. Source-level separation does not guarantee downstream model-level segregation.',
+    inherent: 15, inherentL: 3, inherentI: 5, inherentBand: 'high',
+    residual: 10, residualL: 2, residualI: 5, residualBand: 'high',
+    rationale: 'Likelihood moderated by source-level separation, but a post-merge segregation failure could have major multi-client consequences. Impact 5 because a cross-client exposure event could breach contractual and regulatory obligations simultaneously for multiple clients.',
+    threatClass: 'TC2', owner: 'Database / warehouse owner · Reporting admin',
+    treatment: 'Validate segregation explicitly post-merge through lineage testing; test warehouse-to-report data lineage end-to-end; isolate higher-sensitivity marts where feasible.',
+    status: 'Partly implemented', next: '12 May 2026', target: '8 (Moderate)' },
+  { id: 'R9', theme: 'Permission drift between Power BI and GetThematic creates inconsistent exposure across platforms',
+    systems: 'Power BI roles, GetThematic roles, portal access, qualitative reporting surfaces',
+    mechanism: 'A user correctly restricted in one platform retains broader visibility or download capability in the other. The two platforms maintain separate role models not yet synchronised through a single governance cycle.',
+    controls: 'Central approvals, defined GetThematic roles, governed user add/remove, portal controls, activity logging',
+    gap: 'The two role models remain separate, so deprovisioning or scope reduction can fall out of alignment. A mover event that restricts Power BI access does not automatically restrict GetThematic access.',
+    inherent: 12, inherentL: 4, inherentI: 3, inherentBand: 'high',
+    residual: 9, residualL: 3, residualI: 3, residualBand: 'moderate',
+    rationale: 'Less frequent than standard reporting misuse but plausible whenever dual-surface governance is not tightly aligned. Impact 3 because the qualitative platform exposure is serious but typically narrower in scope than a full reporting dataset exposure.',
+    threatClass: 'TC2', owner: 'CTO · Head of Analytics / qualitative admin',
+    treatment: 'Periodic cross-platform reconciliation on a defined schedule; explicit remove-before-add and dual-platform verification during all mover events.',
+    status: 'Partly implemented', next: '11 Jun 2026', target: '6 (Moderate)' },
+  { id: 'R10', theme: 'A privileged administrative or secrets-management change broadens exposure or weakens controls',
+    systems: 'RLS settings, export settings, SSO mappings, API keys, dataset permissions, workspace administration',
+    mechanism: 'A privileged user unintentionally or deliberately changes a high-impact security setting in a way that broadens access across connected systems. Includes RLS rules, export permissions, SSO role mappings, secret values, or workspace administration.',
+    controls: 'Privileged access approvals, admin activity logging, change control, peer review, emergency-change register',
+    gap: 'A small number of privileged roles still hold high-consequence power across multiple systems. Change control does not yet require independent post-change assurance that security settings remain within their approved baseline.',
+    inherent: 16, inherentL: 4, inherentI: 4, inherentBand: 'high',
+    residual: 12, residualL: 3, residualI: 4, residualBand: 'high',
+    rationale: 'Frequency lower because privileged changes require additional approval. Consequence substantial because one change can alter exposure across several connected services simultaneously.',
+    threatClass: 'TC3', owner: 'CTO · Technical owner / Head of Analytics',
+    treatment: 'Preserve independent peer review for all privileged changes; maintain emergency-change assurance; introduce post-change security baseline verification.',
+    status: 'Ongoing', next: '12 May 2026', target: '8 (Moderate)' },
+  { id: 'R11', theme: 'Vendor support or production-data exceptions broaden third-party exposure',
+    systems: 'GetThematic support pathways, vendor access sessions, production-data support activity',
+    mechanism: 'Approved support access or a production-data exception gives a third party more scope, duration, or data visibility than intended. Can arise from inadequate scoping, failure to revoke on completion, or absence of monitoring during the access window.',
+    controls: 'Ticketed approval, least-privilege scoping, monitored temporary access, supplier assurance under A.5.19–A.5.22, revocation on completion',
+    gap: 'Exception-based access remains safe only if every case is tightly justified, approved, monitored, and evidenced throughout its lifecycle. Supplier monitoring under A.5.22 requires ongoing review rather than one-time contractual assurance.',
+    inherent: 12, inherentL: 3, inherentI: 4, inherentBand: 'high',
+    residual: 8, residualL: 2, residualI: 4, residualBand: 'moderate',
+    rationale: 'Likelihood moderated by formal approval and temporary access controls. Consequence material because the supplier boundary is sensitive and a vendor access event can expose production healthcare data.',
+    threatClass: 'TC3 (partial)', owner: 'CTO · System owner / Head of Analytics',
+    treatment: 'Strict exception records with time-bound approval; senior approval whenever live production data may be visible; evidence of access removal; post-access review.',
+    status: 'Ongoing', next: '11 Jun 2026', target: '6 (Moderate)' },
+  { id: 'R12', theme: 'Informal control ownership slows or fragments incident response',
+    systems: 'Incident coordination across Power BI, GetThematic, reporting operations, and support workflows',
+    mechanism: 'Ownership of containment decisions shifts informally with business structure, creating uncertainty about who has final authority during a time-critical event. Affects the speed and coherence of response to Power BI exposure events, GetThematic disclosure, wrong-recipient distributions, and high-severity access incidents.',
+    controls: 'Incident runbooks, anomaly alerting, post-incident review, daily monitoring, tabletop exercises',
+    gap: 'Ownership is understood in practice but not fixed strongly enough as a documented accountability model under A.5.24. In a time-critical incident, informal ownership can slow containment or create disagreement about escalation authority.',
+    inherent: 12, inherentL: 4, inherentI: 3, inherentBand: 'high',
+    residual: 9, residualL: 3, residualI: 3, residualBand: 'moderate',
+    rationale: 'The environment has incident processes, but ambiguity under pressure can still slow containment. Acts as an amplifier — worsens the consequences of all other threat classes during a live incident.',
+    threatClass: 'Amplifier · TC1–TC5', owner: 'CTO · Head of Analytics, Customer Services, system owners',
+    treatment: 'Document accountable ownership explicitly for reporting exposure events, GetThematic disclosure events, wrong-recipient events, and high-severity access incidents. Include ownership assignments in runbooks and exercise records.',
+    status: 'Planned', next: '11 Jun 2026', target: '4 (Low)' },
+  { id: 'R13', theme: 'Inconsistent application of log retention or weak evidence of log review weakens auditability and incident reconstruction',
+    systems: 'Security-relevant logs across SurveyToGo, SNAP 11, Azure SQL, GetThematic, Power BI, portal access, integrations, incident records',
+    mechanism: 'Defined retention periods or review steps are applied inconsistently across platforms, reducing the ability to investigate incidents, evidence control performance, or reconstruct events reliably under A.8.15 and A.8.16.',
+    controls: 'Defined retention schedule, daily review process, anomaly alerting, central handling of noteworthy events, incident record retention',
+    gap: 'Depends on consistent application of the retention schedule across all platforms and on retained evidence that review, alert handling, and exception review actually occurred. Inconsistent application creates silent gaps only discovered during incident investigation or audit.',
+    inherent: 12, inherentL: 3, inherentI: 4, inherentBand: 'high',
+    residual: 8, residualL: 2, residualI: 4, residualBand: 'moderate',
+    rationale: 'Logging framework is comparatively mature, but weak or absent review evidence can still materially undermine auditability and incident reconstruction. Acts as an amplifier — poor log retention reduces detectability of all other threat classes.',
+    threatClass: 'Amplifier · TC1–TC5', owner: 'CTO · IT operations / platform owners / Analytics',
+    treatment: 'Apply retention schedule consistently across all platforms; document log review completion records; periodically verify retained logs remain accessible; test log recall for a representative recent incident.',
+    status: 'Partly implemented', next: '11 Jun 2026', target: '4 (Low)' }
+];
+
+const boundaryData = {
+  B1: { title: 'Boundary 1 · Source SaaS → Azure SQL ingestion',
+        body: 'Governed API transfer from SurveyToGo and SNAP 11 into Azure SQL. Primary concerns: upstream compromise, ingestion misuse, transfer integrity.',
+        risks: [] },
+  B2: { title: 'Boundary 2 · Client DB → Warehouse consolidation',
+        body: 'Source-level separation must survive consolidation into the reporting warehouse. Segregation that exists pre-merge may not carry through to consolidated marts or derived reporting layers.',
+        risks: ['R8'] },
+  B3: { title: 'Boundary 3 · Azure SQL → GetThematic',
+        body: 'One of the two most sensitive transitions. Concentrates identifiability decisions, supplier reliance, and client-dependent transfer methods (API, export, or manual upload). Control strength is not uniform across implementations.',
+        risks: ['R5', 'R7', 'R11'] },
+  B4: { title: 'Boundary 4 · Data → Power BI reporting',
+        body: 'Direct SQL connection from Azure SQL and optional GetThematic feed. Dependency on correct dataset permissions, RLS, and audience mapping — failures here occur through routine release activity.',
+        risks: ['R2', 'R8'] },
+  B5: { title: 'Boundary 5 · Reporting → End-user consumption',
+        body: 'The other critical transition. Governance weakens once data is exported, distributed, or consumed beyond the tightly controlled reporting surface. Stale recipients, onward sharing, and export misuse all live here.',
+        risks: ['R3', 'R4', 'R9'] },
+  B6: { title: 'Boundary 6 · Identity, vendor support, privileged admin',
+        body: 'Cross-cutting plane spanning all systems. Covers SSO/MFA, service accounts, API keys, admin roles, and vendor-access sessions. One compromised machine identity can traverse multiple tiers.',
+        risks: ['R1', 'R6', 'R10', 'R11'] }
+};
+
+/* ============================================================
+   POPULATE RISK REGISTER
+   ============================================================ */
+const registerBody = document.getElementById('registerBody');
+
+function bandLabel(band) {
+  return { extreme: 'Extreme', high: 'High', moderate: 'Moderate', low: 'Low' }[band] || band;
+}
+
+function renderRegister() {
+  registerBody.innerHTML = '';
+  risks.forEach(r => {
+    const row = document.createElement('tr');
+    row.className = 'register-row';
+    row.dataset.riskId = r.id;
+    row.dataset.threatClass = r.threatClass;
+    row.innerHTML = `
+      <td><span class="reg-id">${r.id}</span></td>
+      <td class="reg-theme">${r.theme}</td>
+      <td class="reg-score"><span class="reg-badge ${r.inherentBand}">${r.inherent} ${bandLabel(r.inherentBand)}</span></td>
+      <td class="reg-score"><span class="reg-badge ${r.residualBand}">${r.residual} ${bandLabel(r.residualBand)}</span></td>
+      <td style="font-size: 0.82rem; color: var(--ink-muted);">${r.status}</td>
+    `;
+    registerBody.appendChild(row);
+
+    const expand = document.createElement('tr');
+    expand.className = 'reg-expand';
+    expand.dataset.riskId = r.id;
+    expand.innerHTML = `
+      <td colspan="5">
+        <div class="reg-expand-inner">
+          <div class="reg-field-grid">
+            <div>
+              <div class="reg-field-label">Affected systems / assets</div>
+              <div class="reg-field-value">${r.systems}</div>
+            </div>
+            <div>
+              <div class="reg-field-label">Threat class · Ownership</div>
+              <div class="reg-field-value"><span class="mono">${r.threatClass}</span> &middot; ${r.owner}</div>
+            </div>
+          </div>
+          <div>
+            <div class="reg-field-label">Threat / failure mechanism</div>
+            <div class="reg-field-value">${r.mechanism}</div>
+          </div>
+          <div class="reg-field-grid" style="margin-top: 1.25rem;">
+            <div>
+              <div class="reg-field-label">Existing controls</div>
+              <div class="reg-field-value">${r.controls}</div>
+            </div>
+            <div>
+              <div class="reg-field-label">Main remaining gap</div>
+              <div class="reg-field-value">${r.gap}</div>
+            </div>
+          </div>
+          <div class="reg-scores-block">
+            <div class="reg-score-cell">
+              <div class="reg-field-label">Inherent</div>
+              <div class="reg-score-big">L${r.inherentL} &times; I${r.inherentI} = ${r.inherent}</div>
+            </div>
+            <div class="reg-score-cell">
+              <div class="reg-field-label">Residual</div>
+              <div class="reg-score-big">L${r.residualL} &times; I${r.residualI} = ${r.residual}</div>
+            </div>
+            <div class="reg-score-cell">
+              <div class="reg-field-label">Target residual</div>
+              <div class="reg-score-big" style="font-size: 1rem; font-variation-settings: 'opsz' 24, 'wght' 400; color: var(--ink-muted); line-height: 1.3;">${r.target}</div>
+            </div>
+          </div>
+          <div>
+            <div class="reg-field-label">Rating rationale</div>
+            <div class="reg-field-value">${r.rationale}</div>
+          </div>
+          <div style="margin-top: 1.25rem;">
+            <div class="reg-field-label">Priority treatment</div>
+            <div class="reg-field-value">${r.treatment}</div>
+          </div>
+          <div class="reg-field-grid" style="margin-top: 1.25rem;">
+            <div>
+              <div class="reg-field-label">Status</div>
+              <div class="reg-field-value">${r.status}</div>
+            </div>
+            <div>
+              <div class="reg-field-label">Next review / action</div>
+              <div class="reg-field-value">${r.next}</div>
+            </div>
+          </div>
+        </div>
+      </td>
+    `;
+    registerBody.appendChild(expand);
+  });
+
+  // Row click to expand
+  document.querySelectorAll('.register-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const id = row.dataset.riskId;
+      const expandRow = document.querySelector(`.reg-expand[data-risk-id="${id}"]`);
+      const isOpen = expandRow.classList.contains('open');
+      document.querySelectorAll('.reg-expand').forEach(e => e.classList.remove('open'));
+      document.querySelectorAll('.register-row').forEach(r => r.classList.remove('active'));
+      if (!isOpen) { expandRow.classList.add('open'); row.classList.add('active'); }
+    });
+  });
+}
+renderRegister();
+
+/* ============================================================
+   FILTER CHIPS
+   ============================================================ */
+document.querySelectorAll('.filter-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    const f = chip.dataset.filter;
+    document.querySelectorAll('.register-row').forEach(row => {
+      const id = row.dataset.riskId;
+      const expandRow = document.querySelector(`.reg-expand[data-risk-id="${id}"]`);
+      const match = f === 'all' || row.dataset.threatClass.includes(f);
+      row.style.display = match ? '' : 'none';
+      if (!match && expandRow) expandRow.style.display = 'none';
+      else if (expandRow && !expandRow.classList.contains('open')) expandRow.style.display = '';
+    });
+  });
+});
+
+/* ============================================================
+   ARCHITECTURE BOUNDARY INTERACTION
+   ============================================================ */
+const boundaryDetail = document.getElementById('boundaryDetail');
+const bdTitle = document.getElementById('bdTitle');
+const bdBody = document.getElementById('bdBody');
+const bdRisks = document.getElementById('bdRisks');
+
+document.querySelectorAll('.arch-boundary').forEach(b => {
+  b.addEventListener('mouseenter', () => showBoundary(b.dataset.boundary, b));
+  b.addEventListener('click', () => showBoundary(b.dataset.boundary, b));
+});
+
+function showBoundary(id, el) {
+  document.querySelectorAll('.arch-boundary').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const d = boundaryData[id];
+  if (!d) return;
+  bdTitle.textContent = d.title;
+  bdBody.innerHTML = `<p style="color: var(--ink-muted); margin: 0;">${d.body}</p>`;
+  bdRisks.innerHTML = d.risks.length
+    ? `<span style="font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); align-self: center; margin-right: 0.5rem;">Linked risks</span>` +
+      d.risks.map(rid => `<span class="risk-chip" data-risk="${rid}"><span class="chip-id">${rid}</span> ${risks.find(r => r.id === rid).theme.substring(0, 50)}…</span>`).join('')
+    : '<span style="font-family: var(--mono); font-size: 0.8rem; color: var(--ink-faint);">No register entries exclusively scoped to this boundary.</span>';
+  boundaryDetail.classList.add('visible');
+  attachRiskChipHandlers();
+}
+
+/* ============================================================
+   RISK CHIP HANDLERS (jump to register entry)
+   ============================================================ */
+function attachRiskChipHandlers() {
+  document.querySelectorAll('.risk-chip').forEach(chip => {
+    if (chip.dataset.bound) return;
+    chip.dataset.bound = '1';
+    chip.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = chip.dataset.risk;
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      document.querySelector('.filter-chip[data-filter="all"]').classList.add('active');
+      document.querySelectorAll('.register-row').forEach(r => r.style.display = '');
+      document.querySelectorAll('.reg-expand').forEach(r => { if (!r.classList.contains('open')) r.style.display = ''; });
+
+      const targetRow = document.querySelector(`.register-row[data-risk-id="${id}"]`);
+      const targetExpand = document.querySelector(`.reg-expand[data-risk-id="${id}"]`);
+      document.querySelectorAll('.reg-expand').forEach(e => e.classList.remove('open'));
+      document.querySelectorAll('.register-row').forEach(r => r.classList.remove('active'));
+      targetExpand.classList.add('open');
+      targetRow.classList.add('active');
+      targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+}
+attachRiskChipHandlers();
+
+/* ============================================================
+   GAP DOMAIN ACCORDION
+   ============================================================ */
+document.querySelectorAll('.gap-domain-header').forEach(h => {
+  h.addEventListener('click', () => h.parentElement.classList.toggle('open'));
+});
+
+/* ============================================================
+   HEAT-MAP
+   ============================================================ */
+const heatmapGrid = document.getElementById('heatmapGrid');
+
+function scoreBand(score) {
+  if (score <= 4) return 'low';
+  if (score <= 9) return 'moderate';
+  if (score <= 16) return 'high';
+  return 'extreme';
+}
+
+// Grid is 5 rows (impact high → low from top) × 5 cols (likelihood low → high left → right)
+// impact: row 0 = I5 (top), row 4 = I1 (bottom)
+// likelihood: col 0 = L1 (left), col 4 = L5 (right)
+for (let r = 0; r < 5; r++) {
+  for (let c = 0; c < 5; c++) {
+    const impact = 5 - r;
+    const likelihood = c + 1;
+    const score = impact * likelihood;
+    const cell = document.createElement('div');
+    cell.className = 'heatmap-cell';
+    cell.dataset.band = scoreBand(score);
+    cell.dataset.l = likelihood;
+    cell.dataset.i = impact;
+    cell.style.display = 'flex';
+    cell.style.flexWrap = 'wrap';
+    cell.style.alignItems = 'center';
+    cell.style.justifyContent = 'center';
+    cell.style.gap = '2px';
+    heatmapGrid.appendChild(cell);
+  }
+}
+
+// Place residual and inherent dots
+risks.forEach(risk => {
+  // residual
+  const resCell = heatmapGrid.querySelector(`.heatmap-cell[data-l="${risk.residualL}"][data-i="${risk.residualI}"]`);
+  if (resCell) {
+    const dot = document.createElement('span');
+    dot.className = 'heatmap-dot';
+    dot.textContent = risk.id;
+    dot.title = `${risk.id} residual (L${risk.residualL} × I${risk.residualI} = ${risk.residual})`;
+    dot.dataset.riskId = risk.id;
+    dot.addEventListener('click', (e) => {
+      e.stopPropagation();
+      jumpToRisk(risk.id);
+    });
+    resCell.appendChild(dot);
+  }
+  // inherent (if different cell)
+  if (risk.inherentL !== risk.residualL || risk.inherentI !== risk.residualI) {
+    const inhCell = heatmapGrid.querySelector(`.heatmap-cell[data-l="${risk.inherentL}"][data-i="${risk.inherentI}"]`);
+    if (inhCell) {
+      const dot = document.createElement('span');
+      dot.className = 'heatmap-dot inherent';
+      dot.textContent = risk.id;
+      dot.title = `${risk.id} inherent (L${risk.inherentL} × I${risk.inherentI} = ${risk.inherent})`;
+      dot.dataset.riskId = risk.id;
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        jumpToRisk(risk.id);
+      });
+      inhCell.appendChild(dot);
+    }
+  }
+});
+
+// Add y-axis labels (impact) — since grid is built differently, overlay labels
+const heatmapWrap = document.querySelector('.heatmap-wrap');
+const yAxisLabels = ['Severe', 'Major', 'Moderate', 'Minor', 'Negligible'];
+const yAxis = document.createElement('div');
+yAxis.className = 'heatmap-yaxis';
+yAxis.style.display = 'flex';
+yAxis.style.flexDirection = 'column';
+yAxis.style.justifyContent = 'space-around';
+yAxis.style.alignItems = 'flex-end';
+yAxis.style.padding = '0 0.5rem 0 0';
+yAxis.style.gap = '0';
+yAxisLabels.forEach(lbl => {
+  const s = document.createElement('span');
+  s.className = 'heatmap-axis-label';
+  s.textContent = lbl;
+  s.style.flex = '1';
+  s.style.display = 'flex';
+  s.style.alignItems = 'center';
+  yAxis.appendChild(s);
+});
+const heatmapXWrap = document.querySelector('.heatmap-xaxis-wrap');
+heatmapWrap.insertBefore(yAxis, heatmapXWrap);
+
+function jumpToRisk(id) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  document.querySelector('.filter-chip[data-filter="all"]').classList.add('active');
+  document.querySelectorAll('.register-row').forEach(r => r.style.display = '');
+  document.querySelectorAll('.reg-expand').forEach(r => { if (!r.classList.contains('open')) r.style.display = ''; });
+  const targetRow = document.querySelector(`.register-row[data-risk-id="${id}"]`);
+  const targetExpand = document.querySelector(`.reg-expand[data-risk-id="${id}"]`);
+  document.querySelectorAll('.reg-expand').forEach(e => e.classList.remove('open'));
+  document.querySelectorAll('.register-row').forEach(r => r.classList.remove('active'));
+  if (targetExpand) targetExpand.classList.add('open');
+  if (targetRow) { targetRow.classList.add('active'); targetRow.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+}
+
+/* ============================================================
+   NAVIGATION — smooth scroll, active tracking, progress
+   ============================================================ */
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const target = document.getElementById(item.dataset.target);
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+const sections = Array.from(document.querySelectorAll('section[id]'));
+const navItems = document.querySelectorAll('.nav-item');
+const progFill = document.getElementById('progFill');
+const progPct = document.getElementById('progPct');
+
+function updateNav() {
+  const scrollY = window.scrollY + 150;
+  let activeId = sections[0]?.id;
+  sections.forEach(s => { if (s.offsetTop <= scrollY) activeId = s.id; });
+  navItems.forEach(i => i.classList.toggle('active', i.dataset.target === activeId));
+
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const pct = Math.min(100, Math.max(0, Math.round((window.scrollY / docHeight) * 100)));
+  progFill.style.width = pct + '%';
+  progPct.textContent = pct + '%';
+}
+window.addEventListener('scroll', updateNav, { passive: true });
+updateNav();
+
+/* Open first boundary by default so the interaction is discoverable */
+setTimeout(() => {
+  const firstB3 = document.querySelector('.arch-boundary[data-boundary="B3"]');
+  if (firstB3) showBoundary('B3', firstB3);
+}, 300);
+/* ============================================================
+   TREATMENT PLAN SIMULATOR
+   ============================================================ */
+const treatments = [
+  { id: '1a', wave: 1, affects: { R3: { L: 3, I: 4, s: 12, band: 'high' } } },
+  { id: '1b', wave: 1, affects: { R4: { L: 3, I: 3, s: 9, band: 'moderate' } } },
+  { id: '1c', wave: 1, affects: {
+      R1: { L: 2, I: 4, s: 8, band: 'moderate' },
+      R9: { L: 2, I: 3, s: 6, band: 'moderate' }
+    } },
+  { id: '1d', wave: 1, affects: {
+      R2:  { L: 2, I: 4, s: 8, band: 'moderate' },
+      R10: { L: 2, I: 4, s: 8, band: 'moderate' }
+    } },
+  { id: '2a', wave: 2, affects: { R5: { L: 2, I: 4, s: 8, band: 'moderate' } } },
+  { id: '2b', wave: 2, affects: { R7: { L: 2, I: 5, s: 10, band: 'high' } } },
+  { id: '2c', wave: 2, affects: { R6: { L: 2, I: 5, s: 10, band: 'high' } } },
+  { id: '3a', wave: 3, affects: { R12: { L: 2, I: 2, s: 4, band: 'low' } } },
+  { id: '3b', wave: 3, affects: { R13: { L: 1, I: 4, s: 4, band: 'low' } } },
+  { id: '3c', wave: 3, affects: { R11: { L: 2, I: 3, s: 6, band: 'moderate' } } }
+];
+
+const simState = new Set();
+
+function computeSimRisks() {
+  return risks.map(r => {
+    let current = { L: r.residualL, I: r.residualI, s: r.residual, band: r.residualBand };
+    treatments.forEach(t => {
+      if (simState.has(t.id) && t.affects[r.id]) {
+        const a = t.affects[r.id];
+        if (a.s < current.s) current = a;
+      }
+    });
+    return Object.assign({}, r, { simL: current.L, simI: current.I, sim: current.s, simBand: current.band });
+  });
+}
+
+function updateSimulator() {
+  const simRisks = computeSimRisks();
+  const bands = { extreme: 0, high: 0, moderate: 0, low: 0 };
+  simRisks.forEach(r => bands[r.simBand]++);
+  const total = simRisks.length;
+
+  // Update band bars
+  ['extreme','high','moderate','low'].forEach(b => {
+    const cap = b.charAt(0).toUpperCase() + b.slice(1);
+    const fill = document.getElementById('bar' + cap);
+    const cnt  = document.getElementById('cnt' + cap);
+    const pct  = total > 0 ? (bands[b] / total) * 100 : 0;
+    if (fill) fill.style.width = pct + '%';
+    if (cnt)  cnt.textContent = bands[b];
+  });
+
+  // NDB chips: mitigated when risk has been improved at all
+  ['R3','R4','R7'].forEach(rid => {
+    const r = simRisks.find(x => x.id === rid);
+    const chip = document.querySelector('.sim-chip.ndb[data-risk="' + rid + '"]');
+    if (chip && r) chip.classList.toggle('mitigated', r.sim < r.residual);
+  });
+
+  // Amplifier chips: mitigated when reduced to Low band
+  ['R12','R13'].forEach(rid => {
+    const r = simRisks.find(x => x.id === rid);
+    const chip = document.querySelector('.sim-chip.amp[data-risk="' + rid + '"]');
+    if (chip && r) chip.classList.toggle('mitigated', r.sim <= 4);
+  });
+
+  // NDB narrative
+  const ndbMitigated = ['R3','R4','R7'].filter(rid => {
+    const r = simRisks.find(x => x.id === rid);
+    return r.sim < r.residual;
+  });
+  const ndbNote = document.getElementById('ndbNarrative');
+  if (ndbNote) {
+    if (ndbMitigated.length === 3) {
+      ndbNote.innerHTML = '<strong>All three NDB-engaging risks improved.</strong> R3 retains High residual because export is an intentional business function; the reduction reflects tightened role matrix and alerting, not removal of the pathway.';
+    } else if (ndbMitigated.length === 0) {
+      ndbNote.innerHTML = '<strong>No NDB-engaging risk addressed.</strong> R3, R4, R7 each remain at their current residual. Any eligible data-breach event arising through these pathways would engage s&nbsp;26WK obligations within 30 days.';
+    } else {
+      ndbNote.innerHTML = '<strong>' + ndbMitigated.length + ' of 3 NDB-engaging risks improved.</strong> Unaddressed: ' + ['R3','R4','R7'].filter(r => !ndbMitigated.includes(r)).join(', ') + '.';
+    }
+  }
+
+  // Amplifier narrative
+  const r12 = simRisks.find(x => x.id === 'R12');
+  const r13 = simRisks.find(x => x.id === 'R13');
+  const ampNote = document.getElementById('amplifierNarrative');
+  if (ampNote) {
+    const r12Done = r12.sim <= 4;
+    const r13Done = r13.sim <= 4;
+    if (r12Done && r13Done) {
+      ampNote.innerHTML = '<strong>Both amplifier controls in place.</strong> Containment speed and detectability are strengthened across every other threat class during a live incident.';
+    } else if (!r12Done && !r13Done) {
+      ampNote.innerHTML = '<strong>Amplifier surface unchanged.</strong> Even where primary risks have been reduced, incident containment and log-based detection remain weak — this degrades the effective residual of every other risk in practice.';
+    } else {
+      ampNote.innerHTML = '<strong>Partial amplifier coverage.</strong> ' + (r12Done ? 'Ownership clarified' : 'Ownership still informal') + '; ' + (r13Done ? 'log-review evidence now retained.' : 'log-review evidence still inconsistent.');
+    }
+  }
+
+  // Mini heatmap
+  renderSimHeatmap(simRisks);
+
+  // Summary narrative
+  updateSimSummary(simRisks, bands);
+}
+
+function renderSimHeatmap(simRisks) {
+  const grid = document.getElementById('simHeatmap');
+  if (!grid) return;
+  grid.innerHTML = '';
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const impact = 5 - r;
+      const likelihood = c + 1;
+      const score = impact * likelihood;
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      cell.dataset.band = scoreBand(score);
+      cell.dataset.l = likelihood;
+      cell.dataset.i = impact;
+      grid.appendChild(cell);
+    }
+  }
+  simRisks.forEach(risk => {
+    const cell = grid.querySelector('.heatmap-cell[data-l="' + risk.simL + '"][data-i="' + risk.simI + '"]');
+    if (cell) {
+      const dot = document.createElement('span');
+      dot.className = 'heatmap-dot';
+      dot.textContent = risk.id;
+      dot.title = risk.id + ' — L' + risk.simL + ' × I' + risk.simI + ' = ' + risk.sim;
+      cell.appendChild(dot);
+    }
+  });
+}
+
+function updateSimSummary(simRisks, bands) {
+  const summary = document.getElementById('simSummary');
+  if (!summary) return;
+  const n = simState.size;
+  const w1 = [...simState].filter(id => id.startsWith('1')).length;
+  const w2 = [...simState].filter(id => id.startsWith('2')).length;
+  const w3 = [...simState].filter(id => id.startsWith('3')).length;
+  const highCount = bands.high + bands.extreme;
+
+  let text;
+  if (n === 0) {
+    text = '<strong>Current state.</strong> ' + highCount + ' risks at High or Extreme, ' + bands.moderate + ' at Moderate. All three NDB-engaging risks (R3, R4, R7) and both amplifier controls (R12, R13) remain unaddressed. This is the residual surface the treatment plan acts against.';
+  } else if (n === 10) {
+    text = '<strong>Full plan complete.</strong> ' + highCount + ' risks remain at High — these are floors, not failures. R3 stays High because export is an intentional business function. R6 and R7 remain High because further reduction requires architectural decomposition (R6) or programmatic redaction (R7), both explicitly outside this plan. R8 (cross-client visibility) is untreated. The residual surface has been reshaped — remaining High risks are now named, bounded, and defensible.';
+  } else if (w3 === 0 && (w1 + w2) > 0) {
+    text = '<strong>Primary pathways treated; amplifiers deferred.</strong> ' + highCount + ' High, ' + bands.moderate + ' Moderate. The direct disclosure routes are tightened, but without R12 (ownership) and R13 (log-review evidence), every remaining risk inherits slower containment and weaker detectability during a live incident. Amplifier logic is precisely why Wave&nbsp;3 exists — this scenario shows why it cannot be quietly dropped for schedule.';
+  } else if (w1 === 4 && w2 === 0 && w3 === 0) {
+    text = '<strong>Wave 1 only.</strong> Outward-facing disclosure tightened across R1, R2, R3, R4, R9, R10. Qualitative and integration-identity surfaces (R5, R6, R7) are unchanged. Amplifier controls remain absent. Suitable as a short-term posture only — the unaddressed risks include two structural NDB engagements (R7) and the broadest blast-radius pathway (R6).';
+  } else if (w1 < 4 && w2 === 0 && w3 === 0) {
+    text = '<strong>Partial Wave 1 (' + w1 + ' of 4).</strong> The highest-value outward-facing controls are only partly in place. ' + highCount + ' risks remain at High. Useful for sequencing discussions but not a defensible end state.';
+  } else if (w1 === 4 && w2 === 3 && w3 === 0) {
+    text = '<strong>Waves 1 + 2 complete.</strong> All primary disclosure and identity pathways addressed. ' + highCount + ' risks remain at High (structural floors), ' + bands.moderate + ' at Moderate. Amplifier controls still absent — this is the gap Wave&nbsp;3 closes.';
+  } else {
+    text = '<strong>Custom selection.</strong> ' + n + ' treatments across Wave&nbsp;1 (' + w1 + '/4), Wave&nbsp;2 (' + w2 + '/3), Wave&nbsp;3 (' + w3 + '/3). ' + highCount + ' High, ' + bands.moderate + ' Moderate, ' + bands.low + ' Low.';
+  }
+  summary.innerHTML = text;
+}
+
+// Wire up checkboxes
+document.querySelectorAll('.sim-treatment input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const tid = cb.dataset.tid;
+    if (cb.checked) simState.add(tid); else simState.delete(tid);
+    cb.closest('.sim-treatment').classList.toggle('checked', cb.checked);
+    updateSimulator();
+  });
+});
+
+// Wave-level toggle
+document.querySelectorAll('.sim-wave-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const wave = +btn.dataset.waveToggle;
+    const ids = treatments.filter(t => t.wave === wave).map(t => t.id);
+    const allOn = ids.every(id => simState.has(id));
+    ids.forEach(id => {
+      const cb = document.querySelector('input[data-tid="' + id + '"]');
+      if (!cb) return;
+      cb.checked = !allOn;
+      if (cb.checked) simState.add(id); else simState.delete(id);
+      cb.closest('.sim-treatment').classList.toggle('checked', cb.checked);
+    });
+    updateSimulator();
+  });
+});
+
+// Preset buttons
+document.querySelectorAll('.sim-action').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const p = btn.dataset.preset;
+    simState.clear();
+    if (p === 'wave1')   treatments.filter(t => t.wave === 1).forEach(t => simState.add(t.id));
+    if (p === 'wave12')  treatments.filter(t => t.wave <= 2).forEach(t => simState.add(t.id));
+    if (p === 'all')     treatments.forEach(t => simState.add(t.id));
+    document.querySelectorAll('.sim-treatment input[type="checkbox"]').forEach(cb => {
+      cb.checked = simState.has(cb.dataset.tid);
+      cb.closest('.sim-treatment').classList.toggle('checked', cb.checked);
+    });
+    updateSimulator();
+  });
+});
+
+// Initial render
+updateSimulator();
+
+</script>
+
+</body>
+</html>
